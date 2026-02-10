@@ -3,7 +3,6 @@
   const cfg = window.APP_CFG || {};
   const SUPABASE_URL = cfg.SUPABASE_URL;
   const ANON_KEY = cfg.ANON_KEY;
-  const EMBED_ADMIN_TOKEN = cfg.ADMIN_TOKEN;
 
   const $ = (id) => document.getElementById(id);
 
@@ -13,22 +12,27 @@
     adminLogged: "pt_admin_logged",
     adminTokenStore: "pt_admin_token_store",
     adminUser: "pt_admin_user",
-    adminMail: "pt_admin_mail"
+    adminMail: "pt_admin_mail",
+    localRecords: "pt_local_records_v2",
+    draft: "pt_draft_v2",
   };
 
   let PUBLIC_PERSONEL = [];
   let ME = { id: null, key: null, ad: null };
-  let ADMIN = { logged: false, token: null, user: null, mail: null };
+  let ADMIN = { logged: false, token: null, user: "", mail: "" };
 
-  let DETAIL = { open: false, personelId: null, personelAd: null, rows: [] };
-  let EDIT_CTX = { kayitId: null, personelId: null, personelAd: null, afterSave: null };
+  let DRAFT = null; // {id,personel_id,personel_ad,kind,note,created_at_iso,status,extra}
+  // kind: "not" | "giris" | "cikis" | "izin"
+
+  let DETAIL = { personelId: null, personelAd: null, rows: [] };
+  let EDIT_CTX = { kayitId: null };
 
   function toast(msg) {
     const t = $("toast");
     t.textContent = msg;
     t.style.display = "block";
     clearTimeout(toast._tm);
-    toast._tm = setTimeout(() => (t.style.display = "none"), 2400);
+    toast._tm = setTimeout(() => (t.style.display = "none"), 2600);
   }
 
   function setPill(kind, msg) {
@@ -64,6 +68,13 @@
     const h = String(d.getHours()).padStart(2, "0");
     const m = String(d.getMinutes()).padStart(2, "0");
     return `${Y}-${M}-${D} ${h}:${m}`;
+  }
+
+  function toIsoFromDateOnly(dateStr, endOfDay=false) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + (endOfDay ? "T23:59:59" : "T00:00:00"));
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
   }
 
   function toIsoFromInput(s) {
@@ -117,6 +128,92 @@
     });
   }
 
+  // ---------------- LOCAL RECORDS ----------------
+  function loadLocalRecords() {
+    try {
+      return JSON.parse(localStorage.getItem(LS.localRecords) || "[]") || [];
+    } catch { return []; }
+  }
+
+  function saveLocalRecords(arr) {
+    localStorage.setItem(LS.localRecords, JSON.stringify(arr));
+  }
+
+  function pruneLocal3Days(arr) {
+    const since = Date.now() - 3*24*60*60*1000;
+    return arr.filter(r => {
+      const t = new Date(r.created_at_iso || r.created_at || 0).getTime();
+      return !isNaN(t) && t >= since;
+    });
+  }
+
+  function setDraft(d) {
+    DRAFT = d;
+    if (d) localStorage.setItem(LS.draft, JSON.stringify(d));
+    else localStorage.removeItem(LS.draft);
+    renderDraftHint();
+  }
+
+  function loadDraft() {
+    try {
+      const d = JSON.parse(localStorage.getItem(LS.draft) || "null");
+      DRAFT = d;
+    } catch { DRAFT = null; }
+  }
+
+  function renderDraftHint() {
+    const hasMe = !!(ME.id && ME.key);
+    const btnSend = $("btnSend");
+    if (!hasMe) {
+      $("draftHint").textContent = "Önce personel seç.";
+      btnSend.disabled = true;
+      return;
+    }
+    if (!DRAFT || DRAFT.personel_id !== ME.id) {
+      $("draftHint").textContent = "Not yaz → (İzin/Giriş/Çıkış/Not) seç → Kaydı Gönder.";
+      btnSend.disabled = true;
+      return;
+    }
+    const s = DRAFT.status === "sent" ? "Gönderildi ✅" : "Gönderilmedi 🟡";
+    $("draftHint").textContent = `${s} • ${DRAFT.kind.toUpperCase()} • ${prettyDT(DRAFT.created_at_iso)}`;
+    btnSend.disabled = (DRAFT.status === "sent");
+  }
+
+  function renderLocalList() {
+    const list = $("localList");
+    const all = pruneLocal3Days(loadLocalRecords());
+    saveLocalRecords(all); // prune persist
+    list.innerHTML = "";
+    const mine = ME.id ? all.filter(r => r.personel_id === ME.id) : [];
+    if (!mine.length) {
+      list.innerHTML = `<div class="hint">Son 3 gün içinde telefon kaydı yok.</div>`;
+      return;
+    }
+    mine.sort((a,b) => (b.created_at_iso||"").localeCompare(a.created_at_iso||""));
+    mine.forEach(r => {
+      const it = document.createElement("div");
+      it.className = "item";
+      const left = document.createElement("div");
+      left.className = "itemLeft";
+      const b = document.createElement("b");
+      b.textContent = `${prettyDT(r.created_at_iso)} • ${r.kind.toUpperCase()}`;
+      const note = document.createElement("div");
+      note.className = "hint";
+      note.style.margin = "6px 0 0";
+      note.textContent = `Not: ${r.note || "-"}`;
+      left.appendChild(b); left.appendChild(note);
+
+      const tag = document.createElement("span");
+      tag.className = "tag " + (r.status === "sent" ? "good" : "warn");
+      tag.innerHTML = `<span class="dot"></span><span>${r.status === "sent" ? "Gönderildi" : "Bekliyor"}</span>`;
+
+      it.appendChild(left);
+      it.appendChild(tag);
+      list.appendChild(it);
+    });
+  }
+
+  // ---------------- LOGIN / STATE ----------------
   function loadLocal() {
     ME.id = localStorage.getItem(LS.meId);
     ME.key = localStorage.getItem(LS.meKey);
@@ -132,15 +229,21 @@
     $("admMail").value = ADMIN.mail || "";
     $("admPass").value = "";
 
-    if (ADMIN.logged && ADMIN.token) {
-      $("adminGate").style.display = "none";
-      $("adminPanel").style.display = "block";
-      $("btnAdminRefresh").disabled = false;
-    } else {
-      $("adminGate").style.display = "block";
-      $("adminPanel").style.display = "none";
-      $("btnAdminRefresh").disabled = true;
-    }
+    const enabled = ADMIN.logged && ADMIN.token;
+    $("adminGate").style.display = enabled ? "none" : "block";
+    $("adminPanel").style.display = enabled ? "block" : "none";
+
+    $("btnAdminRefresh").disabled = !enabled;
+    $("btnExportExcel").disabled = !enabled;
+    $("btnBackup").disabled = !enabled;
+    $("lblRestore").style.display = enabled ? "inline-flex" : "none";
+  }
+
+  function enablePersonButtons(on) {
+    $("btnSetIzin").disabled = !on;
+    $("btnSetGiris").disabled = !on;
+    $("btnSetCikis").disabled = !on;
+    $("btnSetNot").disabled = !on;
   }
 
   function renderMeBadge() {
@@ -148,14 +251,17 @@
       const p = PUBLIC_PERSONEL.find(x => x.id === ME.id);
       ME.ad = p ? p.ad : ME.ad;
       $("meBadge").textContent = ME.ad || "Seçildi";
-      $("meHint").textContent = "Not yaz → izin/giriş/çıkış yap.";
+      enablePersonButtons(true);
     } else {
       $("meBadge").textContent = "Seçilmedi";
-      $("meHint").textContent = "Önce listeden kendi adını seç.";
+      enablePersonButtons(false);
     }
+    renderDraftHint();
+    renderLocalList();
   }
 
-  function itemElPersonel(p, clickableForAdmin) {
+  // ---------------- PUBLIC LIST ----------------
+  function itemElPersonel(p) {
     const div = document.createElement("div");
     div.className = "item";
 
@@ -165,7 +271,7 @@
     b.textContent = p.ad;
 
     const tag = document.createElement("span");
-    tag.className = "tag unk";
+    tag.className = "tag " + (ME.id === p.id ? "good" : "unk");
     tag.innerHTML = `<span class="dot"></span><span>${ME.id === p.id ? "Seçili" : "Seç"}</span>`;
     left.appendChild(b);
     left.appendChild(tag);
@@ -178,23 +284,13 @@
     btn.onclick = async () => {
       ME.id = p.id; ME.ad = p.ad;
       localStorage.setItem(LS.meId, ME.id);
-      renderMeBadge();
-      await refreshMyButtons();
-      await refreshPublicList();
+      renderMeBadge(); // IMPORTANT: this opens buttons
+      await refreshPublicList(); // refresh visuals
     };
     actions.appendChild(btn);
 
     div.appendChild(left);
     div.appendChild(actions);
-
-    if (clickableForAdmin) {
-      div.style.cursor = "pointer";
-      div.addEventListener("click", (ev) => {
-        if (ev.target && ev.target.tagName && ev.target.tagName.toLowerCase() === "button") return;
-        openDetail(p.id, p.ad);
-      });
-    }
-
     return div;
   }
 
@@ -204,12 +300,10 @@
       const data = await selectTable("personel", "id,ad,created_at", "order=created_at.desc");
       PUBLIC_PERSONEL = data || [];
 
-      // if selected missing, clear
       if (ME.id && !PUBLIC_PERSONEL.some(x => x.id === ME.id)) {
         ME.id = null; ME.ad = null;
         localStorage.removeItem(LS.meId);
       }
-
       renderMeBadge();
 
       const list = $("publicList");
@@ -217,7 +311,7 @@
       if (PUBLIC_PERSONEL.length === 0) {
         list.innerHTML = `<div class="hint">Henüz personel yok. Üstten “Kendimi Ekle” ile başlayabilirsiniz.</div>`;
       } else {
-        PUBLIC_PERSONEL.forEach(p => list.appendChild(itemElPersonel(p, false)));
+        PUBLIC_PERSONEL.forEach(p => list.appendChild(itemElPersonel(p)));
       }
 
       setPill("good", "Hazır");
@@ -251,12 +345,44 @@
       $("inpName").value = "";
       toast("Kayıt tamam ✅");
       await refreshPublicList();
-      await refreshMyButtons();
+      renderMeBadge();
       setPill("good", "Hazır");
     } catch (e) {
       setPill("bad", "Hata");
-      toast("Eklenemedi: " + e.message + " (Bu cihazda daha önce eklendiysen listeden adını seç.)");
+      toast("Eklenemedi: " + e.message + " (Daha önce eklendiysen listeden adını seç.)");
     }
+  }
+
+  // ---------------- PERSONEL DRAFT + SEND ----------------
+  function ensureMeSelected() {
+    if (!ME.id || !ME.key) { toast("Önce listeden kendi adını seç."); return false; }
+    return true;
+  }
+
+  function addLocalRecord(rec) {
+    const all = loadLocalRecords();
+    all.push(rec);
+    saveLocalRecords(pruneLocal3Days(all));
+    renderLocalList();
+  }
+
+  function makeDraft(kind) {
+    if (!ensureMeSelected()) return;
+    const note = ($("inpNote").value || "").trim();
+    if (!note) { toast("Not yaz (yağ/mazot/parça/bakım/izin…)."); return; }
+
+    const d = {
+      local_id: randHex(16),
+      personel_id: ME.id,
+      personel_ad: ME.ad || "",
+      kind,
+      note,
+      created_at_iso: new Date().toISOString(),
+      status: "pending"
+    };
+    setDraft(d);
+    addLocalRecord(d);
+    toast(kind === "izin" ? "İzin taslağı hazır 🟡" : "Taslak hazır 🟡");
   }
 
   async function myOpenSession() {
@@ -264,106 +390,60 @@
     const headers = { "x-personel-key": ME.key };
     const open = await selectTable(
       "kayitlar",
-      "id,personel_id,giris_ts,cikis_ts",
-      `personel_id=eq.${ME.id}&cikis_ts=is.null&order=giris_ts.desc&limit=1`,
+      "id,personel_id,giris_ts,cikis_ts,personel_note,izin",
+      `personel_id=eq.${ME.id}&cikis_ts=is.null&izin=eq.false&order=giris_ts.desc&limit=1`,
       headers
     );
     return (open && open[0]) ? open[0] : null;
   }
 
-  async function refreshMyButtons() {
-    const hasMe = !!(ME.id && ME.key);
-    $("btnGiris").disabled = !hasMe;
-    $("btnCikis").disabled = !hasMe;
-    $("btnIzin").disabled = !hasMe;
-
-    if (!hasMe) return;
+  async function sendDraft() {
+    if (!ensureMeSelected()) return;
+    if (!DRAFT || DRAFT.personel_id !== ME.id) { toast("Önce taslak oluştur (Not / Giriş / Çıkış / İzin)."); return; }
+    if (DRAFT.status === "sent") { toast("Zaten gönderildi."); return; }
 
     try {
-      const open = await myOpenSession();
-      if (open) {
-        $("btnGiris").disabled = true;
-        $("btnCikis").disabled = false;
-        $("btnIzin").disabled = true; // içerideyken izin olmaz
-        $("meHint").textContent = "Durum: İçeride. Çıkış için “ÇIKIŞ”.";
+      setPill("warn", "Gönderiliyor…");
+      const headers = { "x-personel-key": ME.key };
+
+      const note = (DRAFT.note || "").trim();
+      const tagNote = (DRAFT.kind === "not") ? ("İŞ: " + note) : note;
+
+      if (DRAFT.kind === "izin") {
+        await insertTable("kayitlar", { personel_id: ME.id, izin: true, personel_note: tagNote }, headers);
+      } else if (DRAFT.kind === "giris") {
+        await insertTable("kayitlar", { personel_id: ME.id, izin: false, personel_note: tagNote }, headers);
+      } else if (DRAFT.kind === "cikis") {
+        const open = await myOpenSession();
+        if (!open) throw new Error("Açık giriş yok. Önce GİRİŞ taslağı oluşturup gönder.");
+        await patchTable("kayitlar", `id=eq.${open.id}`, { cikis_ts: new Date().toISOString(), personel_note: tagNote }, headers);
+      } else if (DRAFT.kind === "not") {
+        // Note-only: store as a normal row, not izin, no cikis; admin will see as open but that's OK; tag "İŞ:"
+        await insertTable("kayitlar", { personel_id: ME.id, izin: false, personel_note: tagNote }, headers);
       } else {
-        $("btnGiris").disabled = false;
-        $("btnCikis").disabled = true;
-        $("btnIzin").disabled = false;
-        $("meHint").textContent = "Durum: Boşta. İzin / Giriş yapabilirsin.";
+        throw new Error("Bilinmeyen taslak türü.");
       }
-    } catch (e) {
-      toast("Durum alınamadı: " + e.message);
-    }
-  }
 
-  async function doGiris() {
-    if (!ME.id || !ME.key) { toast("Önce listeden kendi adını seç."); return; }
-    try {
-      setPill("warn", "Giriş kaydı…");
-      const note = ($("inpNote").value || "").trim();
-      const headers = { "x-personel-key": ME.key };
-      const body = { personel_id: ME.id };
-      if (note) body.personel_note = note;
+      // mark local as sent
+      const all = loadLocalRecords();
+      for (const r of all) {
+        if (r.local_id === DRAFT.local_id) { r.status = "sent"; r.sent_at_iso = new Date().toISOString(); }
+      }
+      saveLocalRecords(pruneLocal3Days(all));
 
-      const res = await insertTable("kayitlar", body, headers);
-      if (!res || !res[0]) throw new Error("Kayıt dönmedi.");
-
+      DRAFT.status = "sent";
+      setDraft(DRAFT);
       $("inpNote").value = "";
-      toast("Giriş alındı ✅");
-      await refreshMyButtons();
+      toast("Gönderildi ✅");
       setPill("good", "Hazır");
+      renderLocalList();
     } catch (e) {
       setPill("bad", "Hata");
-      toast("Giriş yapılamadı: " + e.message);
+      toast("Gönderilemedi: " + e.message);
     }
   }
 
-  async function doCikis() {
-    if (!ME.id || !ME.key) { toast("Önce listeden kendi adını seç."); return; }
-    try {
-      setPill("warn", "Çıkış kaydı…");
-      const headers = { "x-personel-key": ME.key };
-      const open = await myOpenSession();
-      if (!open) { toast("Açık giriş yok."); setPill("good", "Hazır"); await refreshMyButtons(); return; }
-
-      const note = ($("inpNote").value || "").trim();
-      const patch = { cikis_ts: new Date().toISOString() };
-      if (note) patch.personel_note = note;
-
-      const res = await patchTable("kayitlar", `id=eq.${open.id}`, patch, headers);
-      if (!res || !res[0]) throw new Error("Güncelleme dönmedi.");
-
-      $("inpNote").value = "";
-      toast("Çıkış alındı ✅");
-      await refreshMyButtons();
-      setPill("good", "Hazır");
-    } catch (e) {
-      setPill("bad", "Hata");
-      toast("Çıkış yapılamadı: " + e.message);
-    }
-  }
-
-  async function doIzin() {
-    if (!ME.id || !ME.key) { toast("Önce listeden kendi adını seç."); return; }
-    try {
-      const note = ($("inpNote").value || "").trim();
-      if (!note) { toast("İzin için not yaz (örn: Bugün izin aldım)."); return; }
-
-      setPill("warn", "İzin kaydı…");
-      const headers = { "x-personel-key": ME.key };
-      const res = await insertTable("kayitlar", { personel_id: ME.id, izin: true, personel_note: note }, headers);
-      if (!res || !res[0]) throw new Error("Kayıt dönmedi.");
-
-      $("inpNote").value = "";
-      toast("İzin kaydedildi ✅");
-      setPill("good", "Hazır");
-    } catch (e) {
-      setPill("bad", "Hata");
-      toast("İzin kaydı olmadı: " + e.message);
-    }
-  }
-
+  // ---------------- ADMIN ----------------
   async function adminLogin() {
     const user = ($("admUser").value || "").trim();
     const mail = ($("admMail").value || "").trim();
@@ -385,31 +465,23 @@
       toast("Admin giriş ✅");
       setPill("good", "Hazır");
       setAdminUI();
-      await refreshAdminList();
+
+      await refreshAdminAll();
     } catch (e) {
       setPill("bad", "Hata");
       toast("Admin giriş olmadı: " + e.message);
     }
   }
 
-  function modalShow(bgId, show) {
-    const el = $(bgId);
-    el.style.display = show ? "flex" : "none";
-    el.setAttribute("aria-hidden", show ? "false" : "true");
-  }
-
   function filterText(s) { return (s || "").toLowerCase(); }
 
-  function rangeSince(rangeVal) {
-    if (rangeVal === "all") return null;
-    const days = parseInt(rangeVal, 10);
-    if (days === 0) {
-      const d = new Date();
-      d.setHours(0,0,0,0);
-      return d.toISOString();
-    }
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    return since.toISOString();
+  function buildRecordLabel(r) {
+    const note = (r.personel_note || "").trim();
+    if (r.izin) return { t: "İZİN", cls: "warn" };
+    if (note.startsWith("İŞ:")) return { t: "İŞ", cls: "good" };
+    if (r.cikis_ts) return { t: "ÇIKIŞ", cls: "good" };
+    // Open session or "GİRİŞ" record
+    return { t: "GİRİŞ/İŞ", cls: "bad" };
   }
 
   async function fetchPersonelListAdmin() {
@@ -417,14 +489,36 @@
     return (await selectTable("personel", "id,ad,created_at", "order=created_at.desc", headers)) || [];
   }
 
-  async function fetchKayitlarAdmin({ personelId = null, rangeVal = "3" } = {}) {
-    const headers = { "x-admin-token": ADMIN.token };
-    let filter = "order=giris_ts.desc&limit=500";
-    const since = rangeSince(rangeVal);
-    if (since) filter = `giris_ts=gte.${encodeURIComponent(since)}&` + filter;
-    if (personelId) filter = `personel_id=eq.${personelId}&` + filter;
+  function buildDateFilter() {
+    const quick = $("admQuick").value;
+    const start = $("admStart").value;
+    const end = $("admEnd").value;
 
-    // select fields including notes/izin flags (columns added in SQL step below)
+    let sinceIso = null;
+    let untilIso = null;
+
+    if (start) sinceIso = toIsoFromDateOnly(start, false);
+    if (end) untilIso = toIsoFromDateOnly(end, true);
+
+    if (!sinceIso && !untilIso) {
+      if (quick !== "all") {
+        const days = parseInt(quick, 10);
+        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        sinceIso = since.toISOString();
+      }
+    }
+    return { sinceIso, untilIso };
+  }
+
+  async function fetchKayitlarAdmin({ personelId = null } = {}) {
+    const headers = { "x-admin-token": ADMIN.token };
+    const { sinceIso, untilIso } = buildDateFilter();
+
+    let filter = "order=giris_ts.desc&limit=800";
+    if (personelId) filter = `personel_id=eq.${personelId}&` + filter;
+    if (sinceIso) filter = `giris_ts=gte.${encodeURIComponent(sinceIso)}&` + filter;
+    if (untilIso) filter = `giris_ts=lte.${encodeURIComponent(untilIso)}&` + filter;
+
     return (await selectTable(
       "kayitlar",
       "id,personel_id,giris_ts,cikis_ts,edited,edited_at,edit_note,personel_note,izin",
@@ -433,65 +527,157 @@
     )) || [];
   }
 
-  function buildAdminPersonelItem(p) {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.style.cursor = "pointer";
-
-    const left = document.createElement("div");
-    left.className = "itemLeft";
-    const b = document.createElement("b");
-    b.textContent = p.ad;
-    const t = document.createElement("span");
-    t.className = "tag unk";
-    t.innerHTML = `<span class="dot"></span><span>Detay için tıkla</span>`;
-    left.appendChild(b); left.appendChild(t);
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-    const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.textContent = "Detay";
-    btn.onclick = (ev) => { ev.stopPropagation(); openDetail(p.id, p.ad); };
-    actions.appendChild(btn);
-
-    div.appendChild(left); div.appendChild(actions);
-    div.addEventListener("click", () => openDetail(p.id, p.ad));
-    return div;
-  }
-
-  function renderAdminList(personelList) {
-    const list = $("adminList");
+  function renderAdminPersons(plist) {
+    const list = $("adminPersonList");
     list.innerHTML = "";
-    if (!personelList.length) {
+    if (!plist.length) {
       list.innerHTML = `<div class="hint">Henüz personel yok.</div>`;
       return;
     }
-    personelList.forEach(p => list.appendChild(buildAdminPersonelItem(p)));
+    plist.forEach(p => {
+      const it = document.createElement("div");
+      it.className = "item";
+      it.style.cursor = "pointer";
+
+      const left = document.createElement("div");
+      left.className = "itemLeft";
+      const b = document.createElement("b");
+      b.textContent = p.ad;
+      const tag = document.createElement("span");
+      tag.className = "tag unk";
+      tag.innerHTML = `<span class="dot"></span><span>Tüm hareketler</span>`;
+      left.appendChild(b); left.appendChild(tag);
+
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      btn.textContent = "Detay";
+      btn.onclick = (ev) => { ev.stopPropagation(); openDetail(p.id, p.ad); };
+
+      it.appendChild(left);
+      it.appendChild(btn);
+      it.addEventListener("click", () => openDetail(p.id, p.ad));
+      list.appendChild(it);
+    });
   }
 
-  async function refreshAdminList() {
+  function renderAdminRecords(rows, plist) {
+    const q = filterText($("admSearch").value);
+    const list = $("adminRecordList");
+    list.innerHTML = "";
+
+    const pid2name = new Map(plist.map(p => [p.id, p.ad]));
+    const filtered = rows.filter(r => {
+      const name = filterText(pid2name.get(r.personel_id) || "");
+      const note = filterText(r.personel_note || "");
+      const lbl = buildRecordLabel(r).t.toLowerCase();
+      const key = `${name} ${note} ${lbl} ${prettyDT(r.giris_ts)} ${prettyDT(r.cikis_ts)}`.toLowerCase();
+      return !q || key.includes(q);
+    });
+
+    $("admCount").textContent = String(filtered.length);
+
+    if (!filtered.length) {
+      list.innerHTML = `<div class="hint">Kayıt yok.</div>`;
+      return;
+    }
+
+    filtered.forEach(r => {
+      const it = document.createElement("div");
+      it.className = "item";
+      const left = document.createElement("div");
+      left.className = "itemLeft";
+      const b = document.createElement("b");
+      const name = pid2name.get(r.personel_id) || r.personel_id;
+      const lab = buildRecordLabel(r);
+      b.textContent = `${name} • ${prettyDT(r.giris_ts)}`;
+      const note = document.createElement("div");
+      note.className = "hint";
+      note.style.margin = "6px 0 0";
+      note.textContent = `Tür: ${lab.t} • Not: ${(r.personel_note || "-")}`;
+
+      left.appendChild(b);
+      left.appendChild(note);
+
+      const tag = document.createElement("span");
+      tag.className = "tag " + (lab.cls || "unk");
+      tag.innerHTML = `<span class="dot"></span><span>${lab.t}</span>`;
+
+      it.appendChild(left);
+      it.appendChild(tag);
+      list.appendChild(it);
+    });
+  }
+
+  async function refreshAdminAll() {
     if (!(ADMIN.logged && ADMIN.token)) return;
     try {
       setPill("warn", "Admin yükleniyor…");
       const plist = await fetchPersonelListAdmin();
-      renderAdminList(plist);
+      renderAdminPersons(plist);
+      const rows = await fetchKayitlarAdmin({ personelId: null });
+      renderAdminRecords(rows, plist);
       setPill("good", "Hazır");
     } catch (e) {
       setPill("bad", "Hata");
-      toast("Admin liste alınamadı: " + e.message);
+      toast("Admin yüklenemedi: " + e.message);
     }
   }
 
-  function renderDetailRows(rows) {
+  // ---------------- DETAIL + EDIT ----------------
+  function modalShow(bgId, show) {
+    const el = $(bgId);
+    el.style.display = show ? "flex" : "none";
+    el.setAttribute("aria-hidden", show ? "false" : "true");
+  }
+
+  async function openDetail(personelId, personelAd) {
+    if (!(ADMIN.logged && ADMIN.token)) return;
+    DETAIL.personelId = personelId;
+    DETAIL.personelAd = personelAd;
+    $("detailTitle").textContent = `📌 ${personelAd} • Tüm Hareketler`;
+    $("detailSearch").value = "";
+    $("detailQuick").value = "all";
+    modalShow("detailBg", true);
+    await refreshDetail();
+  }
+
+  async function refreshDetail() {
+    if (!(ADMIN.logged && ADMIN.token) || !DETAIL.personelId) return;
+    try {
+      setPill("warn", "Detay…");
+      const headers = { "x-admin-token": ADMIN.token };
+
+      // detailQuick overrides global filter
+      const quick = $("detailQuick").value;
+      let filter = `personel_id=eq.${DETAIL.personelId}&order=giris_ts.desc&limit=1200`;
+      if (quick !== "all") {
+        const days = parseInt(quick, 10);
+        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+        filter = `personel_id=eq.${DETAIL.personelId}&giris_ts=gte.${encodeURIComponent(since)}&order=giris_ts.desc&limit=1200`;
+      }
+      const rows = await selectTable("kayitlar",
+        "id,personel_id,giris_ts,cikis_ts,edited,edited_at,edit_note,personel_note,izin",
+        filter,
+        headers
+      );
+      DETAIL.rows = rows || [];
+      renderDetailRows();
+      setPill("good", "Hazır");
+    } catch (e) {
+      setPill("bad", "Hata");
+      toast("Detay alınamadı: " + e.message);
+    }
+  }
+
+  function renderDetailRows() {
     const q = filterText($("detailSearch").value);
     const list = $("detailList");
     list.innerHTML = "";
-
+    const rows = DETAIL.rows || [];
     const filtered = rows.filter(r => {
       const note = filterText(r.personel_note || "");
-      const isIzin = r.izin === true;
-      const key = `${note} ${isIzin ? "izin" : ""} ${prettyDT(r.giris_ts)} ${prettyDT(r.cikis_ts)}`.toLowerCase();
+      const lbl = buildRecordLabel(r).t.toLowerCase();
+      const key = `${note} ${lbl} ${prettyDT(r.giris_ts)} ${prettyDT(r.cikis_ts)}`.toLowerCase();
       return !q || key.includes(q);
     });
 
@@ -506,22 +692,14 @@
 
       const left = document.createElement("div");
       left.className = "itemLeft";
+      const lab = buildRecordLabel(r);
       const b = document.createElement("b");
-      const title = r.izin ? `İZİN • ${prettyDT(r.giris_ts)}` : `${prettyDT(r.giris_ts)} → ${prettyDT(r.cikis_ts)}`;
-      b.textContent = title;
-
-      const tag = document.createElement("span");
-      tag.className = "tag " + (r.izin ? "good" : (r.cikis_ts ? "good" : "bad"));
-      tag.innerHTML = `<span class="dot"></span><span>${r.izin ? "İzin" : (r.cikis_ts ? "Kapalı" : "Açık (İçeride)")}</span>`;
-
-      left.appendChild(b);
-      left.appendChild(tag);
-
+      b.textContent = `${prettyDT(r.giris_ts)} • ${lab.t}`;
       const note = document.createElement("div");
       note.className = "hint";
       note.style.margin = "6px 0 0";
-      note.textContent = (r.personel_note || "").trim() ? `Not: ${r.personel_note}` : "Not: -";
-      left.appendChild(note);
+      note.textContent = `Not: ${(r.personel_note || "-")}`;
+      left.appendChild(b); left.appendChild(note);
 
       const actions = document.createElement("div");
       actions.className = "actions";
@@ -537,46 +715,12 @@
     });
   }
 
-  async function openDetail(personelId, personelAd) {
-    if (!(ADMIN.logged && ADMIN.token)) return;
-    DETAIL.personelId = personelId;
-    DETAIL.personelAd = personelAd;
-    $("detailTitle").textContent = `📌 ${personelAd} • Detay`;
-
-    $("detailSearch").value = "";
-    $("detailRange").value = "3";
-
-    modalShow("detailBg", true);
-
-    await refreshDetail();
-  }
-
-  async function refreshDetail() {
-    if (!(ADMIN.logged && ADMIN.token) || !DETAIL.personelId) return;
-    try {
-      setPill("warn", "Detay yükleniyor…");
-      const rangeVal = $("detailRange").value;
-      const rows = await fetchKayitlarAdmin({ personelId: DETAIL.personelId, rangeVal });
-      DETAIL.rows = rows || [];
-      renderDetailRows(DETAIL.rows);
-      setPill("good", "Hazır");
-    } catch (e) {
-      setPill("bad", "Hata");
-      toast("Detay alınamadı: " + e.message);
-    }
-  }
-
   function openEdit(row) {
     EDIT_CTX.kayitId = row.id;
-    EDIT_CTX.personelId = DETAIL.personelId;
-    EDIT_CTX.personelAd = DETAIL.personelAd;
-    EDIT_CTX.afterSave = async () => { await refreshDetail(); };
-
     $("editInfo").textContent = `${DETAIL.personelAd} • Kayıt: ${row.id}`;
     $("editGiris").value = prettyDT(row.giris_ts);
     $("editCikis").value = row.cikis_ts ? prettyDT(row.cikis_ts) : "";
     $("editNote").value = (row.personel_note || "").trim();
-
     modalShow("editBg", true);
   }
 
@@ -590,7 +734,7 @@
       if (!g) { toast("Giriş formatı yanlış. Örn: 2026-02-10 08:10"); return; }
       if (c && new Date(c).getTime() < new Date(g).getTime()) { toast("Çıkış, girişten önce olamaz."); return; }
 
-      setPill("warn", "Düzeltme kaydı…");
+      setPill("warn", "Düzeltme…");
       const headers = { "x-admin-token": ADMIN.token };
       const patch = {
         giris_ts: g,
@@ -607,79 +751,238 @@
       toast("Düzeltildi ✅");
       setPill("good", "Hazır");
       modalShow("editBg", false);
-      if (typeof EDIT_CTX.afterSave === "function") await EDIT_CTX.afterSave();
+      await refreshDetail();
+      await refreshAdminAll(); // reflect if in list
     } catch (e) {
       setPill("bad", "Hata");
       toast("Düzeltme olmadı: " + e.message);
     }
   }
 
-  function closeAllModals() {
-    modalShow("editBg", false);
-    modalShow("detailBg", false);
+  // ---------------- EXPORT (Excel .xls) ----------------
+  function downloadText(filename, text, mime) {
+    const blob = new Blob([text], { type: mime || "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2500);
   }
 
-  async function initDbColumnsHint() {
-    // Ensure kayitlar has columns personel_note, izin (for new build).
-    // We cannot alter DB from client; this is just UI guidance if missing.
-    // If columns not exist, inserts will fail with message; user can run SQL patch in Supabase.
+  function exportExcelFromCurrentList() {
+    // Build from DOM list (adminRecordList)
+    const items = $("adminRecordList").querySelectorAll(".item");
+    const rows = [];
+    items.forEach(it => {
+      const b = it.querySelector(".itemLeft b")?.textContent || "";
+      const hint = it.querySelector(".itemLeft .hint")?.textContent || "";
+      // b: "Name • YYYY-MM-DD HH:MM"
+      // hint: "Tür: ... • Not: ..."
+      const name = (b.split("•")[0] || "").trim();
+      const dt = (b.split("•")[1] || "").trim();
+      const m = hint.match(/Tür:\s*([^•]+)•\s*Not:\s*(.*)$/);
+      const tur = m ? m[1].trim() : "";
+      const note = m ? m[2].trim() : "";
+      rows.push({ Personel: name, TarihSaat: dt, Tür: tur, Not: note });
+    });
+
+    const now = new Date();
+    const stamp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const filename = `personel_kayitlari_${stamp}.xls`;
+
+    // Excel-compatible HTML table (Turkish-safe)
+    const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const tableRows = rows.map(r => `<tr><td>${esc(r.Personel)}</td><td>${esc(r.TarihSaat)}</td><td>${esc(r.Tür)}</td><td>${esc(r.Not)}</td></tr>`).join("");
+    const html = `<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<table border="1">
+<tr><th>Personel</th><th>Tarih Saat</th><th>Tür</th><th>Not</th></tr>
+${tableRows}
+</table>
+</body></html>`;
+    downloadText(filename, html, "application/vnd.ms-excel;charset=utf-8");
+    toast("Excel indirildi ✅");
   }
 
+  // ---------------- BACKUP / RESTORE ----------------
+  async function doBackup() {
+    if (!(ADMIN.logged && ADMIN.token)) return;
+    try {
+      setPill("warn", "Yedek…");
+      const headers = { "x-admin-token": ADMIN.token };
+      const personel = await selectTable("personel", "id,ad,created_at", "order=created_at.desc", headers);
+      const kayitlar = await selectTable("kayitlar", "id,personel_id,giris_ts,cikis_ts,edited,edited_at,edit_note,personel_note,izin", "order=giris_ts.desc&limit=50000", headers);
+
+      const data = {
+        meta: { app: "personel_takip_final", created_at: new Date().toISOString() },
+        personel: personel || [],
+        kayitlar: kayitlar || []
+      };
+
+      const now = new Date();
+      const stamp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      downloadText(`personel_yedek_${stamp}.json`, JSON.stringify(data, null, 2), "application/json;charset=utf-8");
+      setPill("good", "Hazır");
+      toast("Yedek indirildi ✅");
+    } catch (e) {
+      setPill("bad", "Hata");
+      toast("Yedek alınamadı: " + e.message);
+    }
+  }
+
+  async function doRestore(file) {
+    if (!(ADMIN.logged && ADMIN.token)) return;
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const personel = Array.isArray(data.personel) ? data.personel : [];
+      const kayitlar = Array.isArray(data.kayitlar) ? data.kayitlar : [];
+
+      if (!confirm("Yedekten AL: Mevcut veriler silinmez, sadece EKLENİR. Devam?")) return;
+
+      setPill("warn", "Yedekten alınıyor…");
+      const headers = { "x-admin-token": ADMIN.token };
+
+      // fetch existing ids to dedupe
+      const existingP = await selectTable("personel", "id", "limit=50000", headers);
+      const existingK = await selectTable("kayitlar", "id", "limit=50000", headers);
+      const setP = new Set((existingP||[]).map(x => x.id));
+      const setK = new Set((existingK||[]).map(x => x.id));
+
+      // insert missing personel (id forced). Requires DB to allow id insert; if not, we skip and map by name.
+      // Safer: insert by name only if missing by name.
+      const existingNames = new Set((await selectTable("personel","ad","limit=50000",headers) || []).map(x => (x.ad||"").trim().toLowerCase()));
+      for (const p of personel) {
+        const name = (p.ad||"").trim();
+        if (!name) continue;
+        const keyName = name.toLowerCase();
+        if (!existingNames.has(keyName)) {
+          try {
+            await insertTable("personel", { ad: name, personel_key: randHex(32) }, headers);
+            existingNames.add(keyName);
+          } catch {}
+        }
+      }
+
+      // refresh personel map
+      const plist = await selectTable("personel", "id,ad", "limit=50000", headers);
+      const name2id = new Map((plist||[]).map(p => [(p.ad||"").trim().toLowerCase(), p.id]));
+
+      // insert missing records (cannot force id; insert without id)
+      for (const r of kayitlar) {
+        if (!r) continue;
+        const pid = r.personel_id;
+        // if pid doesn't exist, try map by name from embedded personel list
+        let finalPid = pid;
+        // can't reliably map; if pid unknown, skip
+        if (!plist.some(p => p.id === finalPid)) continue;
+
+        // dedupe by (personel_id + giris_ts + note + izin) as heuristic
+        const giris = r.giris_ts;
+        if (!giris) continue;
+
+        // quick check: skip if exact id already exists
+        if (r.id && setK.has(r.id)) continue;
+
+        try {
+          await insertTable("kayitlar", {
+            personel_id: finalPid,
+            giris_ts: r.giris_ts,
+            cikis_ts: r.cikis_ts,
+            izin: !!r.izin,
+            personel_note: r.personel_note || null,
+            edited: !!r.edited,
+            edited_at: r.edited_at || null,
+            edit_note: r.edit_note || null
+          }, headers);
+        } catch {}
+      }
+
+      setPill("good", "Hazır");
+      toast("Yedekten alındı ✅");
+      await refreshAdminAll();
+    } catch (e) {
+      setPill("bad", "Hata");
+      toast("Yedekten alma olmadı: " + e.message);
+    } finally {
+      $("inpRestore").value = "";
+    }
+  }
+
+  // ---------------- UI BIND ----------------
   function bindUI() {
     $("btnAddSelf").onclick = addSelf;
-    $("btnRefreshPublic").onclick = async () => { await refreshPublicList(); await refreshMyButtons(); };
-    $("btnGiris").onclick = doGiris;
-    $("btnCikis").onclick = doCikis;
-    $("btnIzin").onclick = doIzin;
+    $("btnRefreshPublic").onclick = refreshPublicList;
+
+    $("btnSetIzin").onclick = () => makeDraft("izin");
+    $("btnSetGiris").onclick = () => makeDraft("giris");
+    $("btnSetCikis").onclick = () => makeDraft("cikis");
+    $("btnSetNot").onclick  = () => makeDraft("not");
+    $("btnSend").onclick = sendDraft;
 
     $("btnAdminLogin").onclick = adminLogin;
-    $("btnAdminRefresh").onclick = refreshAdminList;
+    $("btnAdminRefresh").onclick = refreshAdminAll;
 
-    $("btnDetailClose").onclick = closeAllModals;
+    $("btnApplyFilter").onclick = refreshAdminAll;
+    $("btnClearFilter").onclick = () => {
+      $("admSearch").value = "";
+      $("admQuick").value = "7";
+      $("admStart").value = "";
+      $("admEnd").value = "";
+      refreshAdminAll();
+    };
+
+    $("admSearch").addEventListener("input", () => refreshAdminAll());
+    $("admQuick").addEventListener("change", () => refreshAdminAll());
+    $("admStart").addEventListener("change", () => refreshAdminAll());
+    $("admEnd").addEventListener("change", () => refreshAdminAll());
+
+    $("btnExportExcel").onclick = exportExcelFromCurrentList;
+
+    $("btnBackup").onclick = doBackup;
+    $("inpRestore").addEventListener("change", (ev) => doRestore(ev.target.files && ev.target.files[0]));
+
+    $("btnDetailClose").onclick = () => modalShow("detailBg", false);
     $("detailBg").onclick = (ev) => { if (ev.target === $("detailBg")) modalShow("detailBg", false); };
     $("editBg").onclick = (ev) => { if (ev.target === $("editBg")) modalShow("editBg", false); };
 
-    $("detailSearch").addEventListener("input", () => renderDetailRows(DETAIL.rows));
-    $("detailRange").addEventListener("change", refreshDetail);
-
-    $("admSearch").addEventListener("input", async () => {
-      const q = filterText($("admSearch").value);
-      const plist = await fetchPersonelListAdmin();
-      const filtered = plist.filter(p => filterText(p.ad).includes(q));
-      renderAdminList(filtered);
-    });
-
-    $("admRange").addEventListener("change", async () => {
-      // This range is for global search later (keep simple: just refresh list).
-      await refreshAdminList();
-    });
+    $("detailSearch").addEventListener("input", renderDetailRows);
+    $("detailQuick").addEventListener("change", refreshDetail);
 
     $("btnEditCancel").onclick = () => modalShow("editBg", false);
     $("btnEditSave").onclick = saveEdit;
   }
 
   async function boot() {
+    if (!SUPABASE_URL || !ANON_KEY) {
+      alert("Config eksik: Supabase URL veya anon key yok.");
+      return;
+    }
+
     loadLocal();
+    loadDraft();
     setAdminUI();
 
-    // If admin is "logged" but token missing, reset
-    if (ADMIN.logged && !ADMIN.token) {
-      localStorage.removeItem(LS.adminLogged);
-      ADMIN.logged = false;
-      setAdminUI();
+    // Ensure meKey exists for personel ops
+    if (!ME.key) {
+      const k = localStorage.getItem(LS.meKey);
+      if (k) ME.key = k;
     }
 
     await refreshPublicList();
-    await refreshMyButtons();
-    if (ADMIN.logged && ADMIN.token) await refreshAdminList();
+    renderDraftHint();
+    renderLocalList();
+
+    if (ADMIN.logged && ADMIN.token) {
+      await refreshAdminAll();
+    }
 
     setPill("good", "Hazır");
-  }
-
-  // Expose minimal config check
-  if (!SUPABASE_URL || !ANON_KEY) {
-    alert("Config eksik: Supabase URL veya anon key yok.");
-    return;
   }
 
   bindUI();

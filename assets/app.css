@@ -2,7 +2,7 @@
   --bg:#f6f7fb;
   --card:#ffffff;
   --text:#000000;
-  --muted:#444;
+  --muted:#333;
   --line:#d7dbe8;
   --shadow: 0 10px 24px rgba(17,24,39,.08);
   --good:#0e9f6e;
@@ -19,7 +19,7 @@ body{
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
 }
 .topbar{
-  max-width:1100px;
+  max-width:1200px;
   margin:16px auto 0;
   padding:14px 16px;
   border:1px solid var(--line);
@@ -31,7 +31,7 @@ body{
   align-items:center;
   justify-content:space-between;
 }
-.brand .title{font-weight:800; font-size:16px}
+.brand .title{font-weight:900; font-size:16px}
 .brand .subtitle{color:var(--muted); font-size:12px; margin-top:2px}
 .pill{
   display:flex; align-items:center; gap:8px;
@@ -41,13 +41,13 @@ body{
   white-space:nowrap;
 }
 .dot{width:10px;height:10px;border-radius:999px;background:#9aa4bf}
-.clock{font-weight:700; padding:4px 8px; border-radius:999px; border:1px solid var(--line); background:#fff}
+.clock{font-weight:800; padding:4px 8px; border-radius:999px; border:1px solid var(--line); background:#fff}
 .grid{
-  max-width:1100px;
+  max-width:1200px;
   margin:14px auto 40px;
   padding:0 16px;
   display:grid;
-  grid-template-columns: 1.2fr .8fr;
+  grid-template-columns: 1.3fr .9fr;
   gap:14px;
 }
 @media (max-width:980px){ .grid{grid-template-columns:1fr} }
@@ -83,13 +83,13 @@ h3{margin:0; font-size:15px}
 .inp.area{min-height:72px; resize:vertical}
 .btn{
   width:auto;
-  padding:12px 12px;
+  padding:11px 12px;
   border-radius: 12px;
   border:1px solid #111;
   background:#111;
   color:#fff;
   cursor:pointer;
-  font-weight:800;
+  font-weight:900;
   font-size:13px;
 }
 .btn:hover{filter:brightness(1.05)}
@@ -104,7 +104,7 @@ h3{margin:0; font-size:15px}
   padding:6px 10px; border-radius:999px;
   border:1px solid var(--line); background:#fff;
   font-size:12px; color:#111;
-  font-weight:800;
+  font-weight:900;
 }
 .list{display:flex; flex-direction:column; gap:10px; margin-top:10px}
 .item{
@@ -124,9 +124,10 @@ h3{margin:0; font-size:15px}
 .tag .dot{width:10px;height:10px;border-radius:999px}
 .tag.good .dot{background: var(--good)}
 .tag.bad .dot{background: var(--bad)}
+.tag.warn .dot{background: var(--warn)}
 .tag.unk .dot{background:#9aa4bf}
 .btnrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
-.label{display:block; margin-top:10px; margin-bottom:6px; font-size:12px; font-weight:800; color:#111}
+.label{display:block; margin-top:10px; margin-bottom:6px; font-size:12px; font-weight:900; color:#111}
 .toast{
   position: fixed; left:50%; bottom:18px; transform: translateX(-50%);
   padding:10px 12px; border-radius: 12px;
@@ -141,7 +142,7 @@ h3{margin:0; font-size:15px}
   padding:16px;
 }
 .modal{
-  width:100%; max-width:700px;
+  width:100%; max-width:760px;
   border:1px solid var(--line);
   border-radius: 16px;
   background:#fff;
@@ -149,4 +150,4 @@ h3{margin:0; font-size:15px}
   padding:14px;
 }
 .footnote{color:var(--muted); font-size:12px; margin-top:10px}
-.meta{font-size:12px; color:#111; margin:8px 0; font-weight:800}
+.meta{font-size:12px; color:#111; margin:8px 0; font-weight:900}
