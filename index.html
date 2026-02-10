@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Personel Takip</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="title">Personel Takip</div>
+      <div class="subtitle">Beyaz tema • Siyah yazı • Silme yok • Canlı yok</div>
+    </div>
+    <div class="pill" id="pill">
+      <span class="dot" id="pillDot"></span>
+      <span id="pillText">Hazır</span>
+      <span class="clock" id="clock">--:--</span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- PERSONEL -->
+    <section class="card" aria-label="Personel">
+      <div class="split">
+        <h2>👷 Personel</h2>
+        <div class="actions">
+          <button id="btnRefreshPublic" class="btn">Yenile</button>
+        </div>
+      </div>
+
+      <div class="row2">
+        <input id="inpName" class="inp" placeholder="Ad Soyad (personel kendini ekler)" autocomplete="off" />
+        <button id="btnAddSelf" class="btn btn-good">Kendimi Ekle</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <p class="hint">
+        Listeden <b>kendi adını</b> seç → önce <b>Not</b> yaz (opsiyonel) → sonra <b>GİRİŞ</b> / <b>ÇIKIŞ</b>.
+        İzin aldıysan: Not yazıp <b>butona basma</b> (işe gelmedi kaydı oluşur).
+      </p>
+
+      <div class="list" id="publicList"></div>
+
+      <div class="hr"></div>
+
+      <div class="card inner">
+        <div class="split">
+          <b>Seçilen Personel</b>
+          <span class="badge" id="meBadge">Seçilmedi</span>
+        </div>
+
+        <!-- NOT: BUTONLARIN ÜSTÜ -->
+        <label class="label" for="inpNote">Not (opsiyonel)</label>
+        <textarea id="inpNote" class="inp area" placeholder="Örn: Bugün izin aldım / Hastane / Geç geleceğim"></textarea>
+
+        <div class="btnrow">
+          <button id="btnIzin" class="btn btn-warn" disabled>İZİN KAYDI</button>
+          <button id="btnGiris" class="btn btn-good" disabled>GİRİŞ</button>
+          <button id="btnCikis" class="btn btn-bad" disabled>ÇIKIŞ</button>
+        </div>
+
+        <div class="hint" id="meHint">Önce listeden kendi adını seç.</div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section class="card" aria-label="Admin">
+      <div class="split">
+        <h2>👑 Admin</h2>
+        <div class="actions">
+          <button id="btnAdminRefresh" class="btn" disabled>Yenile</button>
+        </div>
+      </div>
+
+      <div id="adminGate">
+        <p class="hint">
+          Admin girişi cihazda <b>tek sefer</b> yapılır, sonra kayıtlı kalır. Çıkış yok.
+        </p>
+
+        <div class="row2">
+          <input id="admUser" class="inp" placeholder="Kullanıcı adı (ör: admin)" autocomplete="off" />
+          <input id="admMail" class="inp" placeholder="Mail" autocomplete="off" />
+        </div>
+
+        <input id="admPass" class="inp" placeholder="Admin Token" type="password" autocomplete="off" />
+        <button id="btnAdminLogin" class="btn btn-warn">Admin Giriş</button>
+      </div>
+
+      <div id="adminPanel" class="adminPanel" style="display:none">
+        <div class="row2">
+          <input id="admSearch" class="inp" placeholder="Ara: personel adı veya not içinde (örn: izin)" autocomplete="off" />
+          <select id="admRange" class="inp">
+            <option value="0">Bugün</option>
+            <option value="3" selected>Son 3 gün</option>
+            <option value="7">Son 7 gün</option>
+            <option value="30">Son 30 gün</option>
+            <option value="all">Tümü</option>
+          </select>
+        </div>
+
+        <div class="hint">
+          Personel satırına tıkla → detay açılır. Detayda her satırda ✏️ <b>DÜZELT</b> var.
+        </div>
+
+        <div class="list" id="adminList"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- MODAL: Detay -->
+  <div class="modalBg" id="detailBg" aria-hidden="true">
+    <div class="modal">
+      <div class="split">
+        <h3 id="detailTitle">Detay</h3>
+        <div class="actions">
+          <button id="btnDetailClose" class="btn">Kapat</button>
+        </div>
+      </div>
+
+      <div class="row2">
+        <input id="detailSearch" class="inp" placeholder="Detay içinde ara (örn: izin)" autocomplete="off" />
+        <select id="detailRange" class="inp">
+          <option value="0">Bugün</option>
+          <option value="3" selected>Son 3 gün</option>
+          <option value="7">Son 7 gün</option>
+          <option value="30">Son 30 gün</option>
+          <option value="all">Tümü</option>
+        </select>
+      </div>
+
+      <div class="list" id="detailList"></div>
+      <div class="footnote">Silme yok ✅ • Düzeltme işaretlenir ✅ • Canlı yok ✅</div>
+    </div>
+  </div>
+
+  <!-- MODAL: Düzelt -->
+  <div class="modalBg" id="editBg" aria-hidden="true">
+    <div class="modal">
+      <div class="split">
+        <h3>✏️ Kayıt Düzelt</h3>
+        <div class="actions">
+          <button id="btnEditCancel" class="btn">Vazgeç</button>
+        </div>
+      </div>
+
+      <div class="meta" id="editInfo"></div>
+
+      <label class="label">Giriş (YYYY-MM-DD HH:MM)</label>
+      <input id="editGiris" class="inp" placeholder="2026-02-10 08:10" />
+
+      <label class="label">Çıkış (boş bırakılabilir)</label>
+      <input id="editCikis" class="inp" placeholder="2026-02-10 17:05" />
+
+      <label class="label">Not (opsiyonel)</label>
+      <textarea id="editNote" class="inp area" placeholder="Düzeltme notu"></textarea>
+
+      <button id="btnEditSave" class="btn btn-warn">Kaydet</button>
+      <div class="footnote">Silme yok ✅ • Her satırda DÜZELT ✅</div>
+    </div>
+  </div>
+
+  <script>
+    window.APP_CFG = {"SUPABASE_URL": "https://ngnpocqaznpuggsvwbif.supabase.co", "ANON_KEY": "sb_publishable_st-oRCixt2NLZnE1CFga6A_fCqdcGZn", "ADMIN_TOKEN": "2550d2afd71062bde89a04d5b2ad55ec502d35a1f9b8ff89"};
+  </script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
