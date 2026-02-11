@@ -78,6 +78,9 @@
 
 <script>
   // ✅ SUPABASE BAĞLANTI
+  <script>
+document.addEventListener("DOMContentLoaded", function () {
+
   const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_st-oRCixt2NLZnE1CFga6A_fCqdcGZn";
 
@@ -86,8 +89,67 @@
   let aktifPersonel = null;
 
   function esc(s){
-    return String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    return String(s ?? "").replace(/[&<>"]/g, c => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;'
+    }[c]));
   }
+
+  window.giris = async function(){
+    const ad = document.getElementById("ad").value.trim();
+    const sifre = document.getElementById("sifre").value.trim();
+    if(!ad || !sifre) return alert("Ad ve şifre gerekli");
+
+    const res = await supabase
+      .from("personeller")
+      .select("*")
+      .eq("ad_soyad", ad)
+      .maybeSingle();
+
+    if(res.error) return alert("Hata: " + res.error.message);
+
+    if(!res.data){
+      const ins = await supabase.from("personeller").insert([{ ad_soyad: ad, sifre }]);
+      if(ins.error) return alert("Kayıt hatası");
+      aktifPersonel = ad;
+    } else {
+      if(res.data.sifre !== sifre) return alert("Şifre yanlış");
+      aktifPersonel = ad;
+    }
+
+    localStorage.setItem("aktifPersonel", ad);
+    document.getElementById("personelPanel").classList.remove("hidden");
+  };
+
+  window.kaydet = async function(){
+    if(!aktifPersonel) return alert("Önce giriş yap");
+
+    const tur = document.getElementById("tur").value;
+    const notText = document.getElementById("notText").value.trim();
+    if(!notText) return alert("Not gerekli");
+
+    const ins = await supabase.from("hareketler").insert([
+      { personel_id: aktifPersonel, tur, not_text: notText }
+    ]);
+
+    if(ins.error) return alert("Kayıt hatası");
+
+    document.getElementById("notText").value = "";
+    alert("Kaydedildi");
+  };
+
+  window.adminGiris = function(){
+    const sifre = document.getElementById("adminSifre").value.trim();
+    if(sifre !== "070707") return alert("Yanlış şifre");
+
+    document.getElementById("adminPanel").classList.remove("hidden");
+  };
+
+});
+</script>
+
 
   // ✅ PERSONEL GİRİŞ / KAYIT
   async function giris(){
