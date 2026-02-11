@@ -5,213 +5,212 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Personel Takip ONLINE</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase (CDN) -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body{font-family:Arial;background:#fff;color:#000;padding:20px}
-input,select,textarea,button{padding:8px;margin:5px 0;width:100%}
-button{cursor:pointer}
-.card{border:1px solid #ddd;padding:15px;margin-bottom:20px}
-.hidden{display:none}
-h2{margin-bottom:20px}
+  body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto; background:#fff; color:#000; padding:20px}
+  .card{border:1px solid #ddd; padding:14px; margin-bottom:16px; border-radius:12px}
+  input,select,textarea,button{width:100%; padding:10px; margin:6px 0; border:1px solid #ccc; border-radius:10px; font-size:16px}
+  textarea{min-height:90px; resize:vertical}
+  button{cursor:pointer; font-weight:800; border:none; background:#0b6cff; color:#fff}
+  button.gray{background:#f1f1f1; color:#000; border:1px solid #ddd}
+  .hidden{display:none}
+  .item{border-top:1px solid #eee; padding:8px 0}
+  .muted{color:#444; font-size:12px}
 </style>
 </head>
-<body>
 
+<body>
 <h2>Personel Takip (ONLINE)</h2>
+<div class="muted">Canlı dinleme yok • Manuel “Yenile” • Admin şifre: <b>070707</b></div>
 
 <!-- PERSONEL -->
 <div class="card">
-<h3>Personel</h3>
+  <h3>Personel</h3>
+  <input id="ad" placeholder="Ad Soyad">
+  <input id="sifre" type="password" placeholder="Şifre">
+  <button id="btnGiris">Giriş / Kayıt</button>
 
-<input id="ad" placeholder="Ad Soyad">
-<input id="sifre" type="password" placeholder="Şifre">
-<button onclick="giris()">Giriş / Kayıt</button>
+  <div id="personelPanel" class="hidden">
+    <select id="tur">
+      <option value="not">Not</option>
+      <option value="giris">Giriş</option>
+      <option value="cikis">Çıkış</option>
+      <option value="izin">İzin</option>
+    </select>
 
-<div id="personelPanel" class="hidden">
-<select id="tur">
-<option value="not">Not</option>
-<option value="giris">Giriş</option>
-<option value="cikis">Çıkış</option>
-<option value="izin">İzin</option>
-</select>
+    <textarea id="notText" placeholder="Not yaz (zorunlu)"></textarea>
 
-<textarea id="notText" placeholder="Not yaz (zorunlu)"></textarea>
+    <button id="btnKaydet">Kaydı Gönder</button>
+    <button id="btnYenileP" class="gray">Yenile</button>
 
-<button onclick="kaydet()">Kaydı Gönder</button>
-<button onclick="kendiKayitlarim()">Yenile</button>
-
-<div id="liste"></div>
+    <div id="liste"></div>
+  </div>
 </div>
-</div>
-
 
 <!-- ADMIN -->
 <div class="card">
-<h3>Admin</h3>
+  <h3>Admin</h3>
+  <input id="adminSifre" type="password" placeholder="Admin Şifre (070707)">
+  <button id="btnAdmin">Admin Giriş</button>
 
-<input id="adminSifre" type="password" placeholder="Admin Şifre (070707)">
-<button onclick="adminGiris()">Admin Giriş</button>
-
-<div id="adminPanel" class="hidden">
-<button onclick="tumKayitlar()">Tüm Kayıtları Yenile</button>
-<div id="adminListe"></div>
+  <div id="adminPanel" class="hidden">
+    <button id="btnYenileA" class="gray">Tüm Kayıtları Yenile</button>
+    <div id="adminListe"></div>
+  </div>
 </div>
-</div>
-
 
 <script>
+(() => {
+  "use strict";
 
-// 🔹 SUPABASE BİLGİLERİ
-const supabase = window.supabase.createClient(
-  "https://ngnpocqaznpuggsvwbif.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec"
-);
+  // ✅ DOĞRU URL + ANON KEY (senin verdiğin)
+  const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
 
-let aktifPersonel = null;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+  let supabaseClient = null;
+  let aktifPersonel = null;
 
-// 🔹 PERSONEL GİRİŞ / KAYIT
-async function giris(){
-  const ad = document.getElementById("ad").value.trim();
-  const sifre = document.getElementById("sifre").value.trim();
+  function toast(msg){ alert(msg); }
 
-  if(!ad || !sifre){
-    alert("Ad ve şifre gerekli");
-    return;
+  // ✅ Admin giriş HER HALÜKARDA çalışsın (Supabase bozuk olsa bile panel açılır)
+  function adminGiris(){
+    const sifre = $("adminSifre").value.trim();
+    if(sifre !== "070707") return toast("Yanlış şifre");
+    $("adminPanel").classList.remove("hidden");
+    tumKayitlar(); // Supabase yoksa içeride uyarı verir
   }
 
-  let { data, error } = await supabase
-    .from("personeller")
-    .select("*")
-    .eq("ad_soyad", ad)
-    .single();
+  async function initSupabase(){
+    // CDN henüz yüklenmediyse biraz bekle
+    for(let i=0;i<25;i++){
+      if(window.supabase && typeof window.supabase.createClient === "function") break;
+      await new Promise(r => setTimeout(r, 120));
+    }
+    if(!(window.supabase && typeof window.supabase.createClient === "function")){
+      // Supabase yüklenmemiş olsa bile admin paneli çalışacak (sadece kayıt çekemez)
+      console.warn("Supabase library yüklenemedi.");
+      return;
+    }
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
 
-  if(!data){
-    // Yeni kayıt
-    const { error: insertErr } = await supabase
+  async function giris(){
+    const ad = $("ad").value.trim();
+    const sifre = $("sifre").value.trim();
+    if(!ad || !sifre) return toast("Ad ve şifre gerekli");
+
+    if(!supabaseClient) return toast("Supabase yüklenmedi (internet/engelleme). Sonra tekrar dene.");
+
+    // Kullanıcı var mı?
+    const res = await supabaseClient
       .from("personeller")
-      .insert([{ ad_soyad: ad, sifre: sifre }]);
+      .select("*")
+      .eq("ad_soyad", ad)
+      .maybeSingle();
 
-    if(insertErr){
-      alert("Kayıt hatası: " + insertErr.message);
-      return;
+    if(res.error) return toast("Hata: " + res.error.message);
+
+    if(!res.data){
+      const ins = await supabaseClient
+        .from("personeller")
+        .insert([{ ad_soyad: ad, sifre: sifre }]);
+      if(ins.error) return toast("Kayıt hatası: " + ins.error.message);
+      aktifPersonel = ad;
+    } else {
+      if(res.data.sifre !== sifre) return toast("Şifre yanlış");
+      aktifPersonel = ad;
     }
 
-    aktifPersonel = ad;
-  } else {
-    if(data.sifre !== sifre){
-      alert("Şifre yanlış");
-      return;
-    }
-    aktifPersonel = ad;
-  }
-
-  localStorage.setItem("aktifPersonel", ad);
-  document.getElementById("personelPanel").classList.remove("hidden");
-  kendiKayitlarim();
-}
-
-
-// 🔹 OTOMATİK OTURUM
-window.onload = function(){
-  const kayit = localStorage.getItem("aktifPersonel");
-  if(kayit){
-    aktifPersonel = kayit;
-    document.getElementById("personelPanel").classList.remove("hidden");
+    localStorage.setItem("aktifPersonel", ad);
+    $("personelPanel").classList.remove("hidden");
     kendiKayitlarim();
   }
-}
 
+  async function kaydet(){
+    if(!aktifPersonel) return toast("Önce giriş yap");
+    if(!supabaseClient) return toast("Supabase yüklenmedi (internet/engelleme).");
 
-// 🔹 KAYIT EKLE
-async function kaydet(){
-  if(!aktifPersonel){
-    alert("Önce giriş yap");
-    return;
+    const tur = $("tur").value;
+    const notText = $("notText").value.trim();
+    if(!notText) return toast("Not gerekli");
+
+    const ins = await supabaseClient
+      .from("hareketler")
+      .insert([{ personel_id: aktifPersonel, tur: tur, not_text: notText }]);
+
+    if(ins.error) return toast("Kayıt hatası: " + ins.error.message);
+
+    $("notText").value = "";
+    toast("Kaydedildi");
+    kendiKayitlarim();
   }
 
-  const tur = document.getElementById("tur").value;
-  const notText = document.getElementById("notText").value.trim();
+  async function kendiKayitlarim(){
+    if(!aktifPersonel) return;
+    if(!supabaseClient) return toast("Supabase yüklenmedi (internet/engelleme).");
 
-  if(!notText){
-    alert("Not gerekli");
-    return;
+    const res = await supabaseClient
+      .from("hareketler")
+      .select("*")
+      .eq("personel_id", aktifPersonel)
+      .order("created_at", { ascending:false })
+      .limit(200);
+
+    if(res.error) return toast("Liste hatası: " + res.error.message);
+
+    const data = res.data || [];
+    $("liste").innerHTML = data.length
+      ? data.map(x => `<div class="item"><b>${esc(x.tur)}</b> - ${esc(x.not_text)}</div>`).join("")
+      : `<div class="item">Kayıt yok</div>`;
   }
 
-  const { error } = await supabase
-    .from("hareketler")
-    .insert([{ personel_id: aktifPersonel, tur: tur, not_text: notText }]);
+  async function tumKayitlar(){
+    if(!supabaseClient){
+      $("adminListe").innerHTML = `<div class="item">Supabase yüklenmedi. (Admin paneli açıldı ama kayıt çekemez.)</div>`;
+      return;
+    }
 
-  if(error){
-    alert("Kayıt hatası: " + error.message);
-    return;
+    const res = await supabaseClient
+      .from("hareketler")
+      .select("*")
+      .order("created_at", { ascending:false })
+      .limit(300);
+
+    if(res.error) return toast("Admin liste hatası: " + res.error.message);
+
+    const data = res.data || [];
+    $("adminListe").innerHTML = data.length
+      ? data.map(x => `<div class="item"><b>${esc(x.personel_id)}</b> - ${esc(x.tur)} - ${esc(x.not_text)}</div>`).join("")
+      : `<div class="item">Kayıt yok</div>`;
   }
 
-  document.getElementById("notText").value = "";
-  alert("Kaydedildi");
-  kendiKayitlarim();
-}
+  // Buton bağla
+  $("btnAdmin").addEventListener("click", adminGiris);
+  $("btnGiris").addEventListener("click", giris);
+  $("btnKaydet").addEventListener("click", kaydet);
+  $("btnYenileP").addEventListener("click", kendiKayitlarim);
+  $("btnYenileA").addEventListener("click", tumKayitlar);
 
+  // Otomatik oturum
+  window.addEventListener("load", async () => {
+    await initSupabase();
 
-// 🔹 PERSONEL KENDİ KAYITLARI
-async function kendiKayitlarim(){
-  const { data, error } = await supabase
-    .from("hareketler")
-    .select("*")
-    .eq("personel_id", aktifPersonel)
-    .order("created_at",{ascending:false})
-    .limit(100);
-
-  if(error){
-    alert("Liste hatası: " + error.message);
-    return;
-  }
-
-  let html="";
-  data.forEach(x=>{
-    html+=`<div><b>${x.tur}</b> - ${x.not_text}</div>`;
+    const kayit = localStorage.getItem("aktifPersonel");
+    if(kayit){
+      aktifPersonel = kayit;
+      $("personelPanel").classList.remove("hidden");
+      // Supabase hazırsa listele
+      if(supabaseClient) kendiKayitlarim();
+    }
   });
 
-  document.getElementById("liste").innerHTML = html;
-}
-
-
-// 🔹 ADMIN GİRİŞ
-function adminGiris(){
-  const sifre = document.getElementById("adminSifre").value.trim();
-
-  if(sifre !== "070707"){
-    alert("Yanlış şifre");
-    return;
-  }
-
-  document.getElementById("adminPanel").classList.remove("hidden");
-  tumKayitlar();
-}
-
-
-// 🔹 TÜM KAYITLAR
-async function tumKayitlar(){
-  const { data, error } = await supabase
-    .from("hareketler")
-    .select("*")
-    .order("created_at",{ascending:false})
-    .limit(300);
-
-  if(error){
-    alert("Admin liste hatası: " + error.message);
-    return;
-  }
-
-  let html="";
-  data.forEach(x=>{
-    html+=`<div><b>${x.personel_id}</b> - ${x.tur} - ${x.not_text}</div>`;
-  });
-
-  document.getElementById("adminListe").innerHTML = html;
-}
-
+})();
 </script>
+
 </body>
 </html>
