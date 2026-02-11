@@ -1,215 +1,143 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Personel Takip ONLINE</title>
-
-<!-- Supabase (CDN) -->
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personel Takip - Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-  body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto; background:#fff; color:#000; padding:20px}
-  .card{border:1px solid #ddd; padding:14px; margin-bottom:16px; border-radius:12px}
-  input,select,textarea,button{width:100%; padding:10px; margin:6px 0; border:1px solid #ccc; border-radius:10px; font-size:16px}
-  textarea{min-height:90px; resize:vertical}
-  button{cursor:pointer; font-weight:800; border:none; background:#0b6cff; color:#fff}
-  button.gray{background:#f1f1f1; color:#000; border:1px solid #ddd}
-  .hidden{display:none}
-  .item{border-top:1px solid #eee; padding:8px 0}
-  .muted{color:#444; font-size:12px}
+body {
+  font-family: Arial, sans-serif;
+  background:#f3f4f6;
+  margin:0;
+  padding:20px;
+}
+
+.card {
+  background:#fff;
+  padding:16px;
+  border-radius:14px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+  margin-bottom:14px;
+}
+
+input, button {
+  border-radius:12px;
+  padding:10px;
+  border:1px solid #d1d5db;
+}
+
+button.primary {
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+
+button.danger {
+  background:#dc2626;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+
+#summaryBox {
+  background:#fafafa;
+  border:1px dashed #d1d5db;
+  padding:10px;
+  border-radius:12px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+th, td {
+  border-bottom:1px solid #e5e7eb;
+  padding:8px;
+  font-size:14px;
+}
+
+th {
+  background:#f9fafb;
+  text-align:left;
+}
 </style>
 </head>
 
 <body>
-<h2>Personel Takip (ONLINE)</h2>
-<div class="muted">Canlı dinleme yok • Manuel “Yenile” • Admin şifre: <b>070707</b></div>
 
-<!-- PERSONEL -->
+<h2>📊 Personel Takip - Admin Panel</h2>
+
 <div class="card">
-  <h3>Personel</h3>
-  <input id="ad" placeholder="Ad Soyad">
-  <input id="sifre" type="password" placeholder="Şifre">
-  <button id="btnGiris">Giriş / Kayıt</button>
 
-  <div id="personelPanel" class="hidden">
-    <select id="tur">
-      <option value="not">Not</option>
-      <option value="giris">Giriş</option>
-      <option value="cikis">Çıkış</option>
-      <option value="izin">İzin</option>
-    </select>
+  <!-- Tarih Filtre -->
+  <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end;">
+    <div>
+      <label>Başlangıç</label><br>
+      <input type="date" id="dtStart">
+    </div>
 
-    <textarea id="notText" placeholder="Not yaz (zorunlu)"></textarea>
+    <div>
+      <label>Bitiş</label><br>
+      <input type="date" id="dtEnd">
+    </div>
 
-    <button id="btnKaydet">Kaydı Gönder</button>
-    <button id="btnYenileP" class="gray">Yenile</button>
+    <button class="primary" id="btnFilter">Filtrele</button>
+    <button id="btnClear">Temizle</button>
 
-    <div id="liste"></div>
+    <div id="filterInfo" style="margin-left:auto; font-size:12px;">
+      Filtre: Bugün
+    </div>
   </div>
+
+  <!-- Arama -->
+  <div style="margin-top:12px;">
+    <input type="text" id="txtSearch" placeholder="🔎 Personel / Tür / Not / Tarih / Saat ara..." style="width:100%;">
+  </div>
+
+  <!-- Özet -->
+  <div id="summaryBox" style="margin-top:12px;">
+    <b>Özet</b> —
+    Giriş: <b id="sumIn">0</b> ·
+    Çıkış: <b id="sumOut">0</b> ·
+    İzin: <b id="sumLeave">0</b> ·
+    Not: <b id="sumNote">0</b>
+  </div>
+
+  <!-- Butonlar -->
+  <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+    <button class="primary" id="btnExcel">Raporu İndir (.xlsx)</button>
+    <button id="btnBackup">Yedek Al (JSON)</button>
+    <button class="danger" id="btnRestore">Yedekten Al</button>
+  </div>
+
 </div>
 
-<!-- ADMIN -->
+<!-- Liste -->
 <div class="card">
-  <h3>Admin</h3>
-  <input id="adminSifre" type="password" placeholder="Admin Şifre (070707)">
-  <button id="btnAdmin">Admin Giriş</button>
-
-  <div id="adminPanel" class="hidden">
-    <button id="btnYenileA" class="gray">Tüm Kayıtları Yenile</button>
-    <div id="adminListe"></div>
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Tarih</th>
+        <th>Saat</th>
+        <th>Personel</th>
+        <th>Tür</th>
+        <th>Not</th>
+      </tr>
+    </thead>
+    <tbody id="dataTable">
+      <tr><td colspan="5" style="text-align:center;">Veri yok</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <script>
-(() => {
-  "use strict";
-
-  // ✅ DOĞRU URL + ANON KEY (senin verdiğin)
-  const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
-
-  const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-
-  let supabaseClient = null;
-  let aktifPersonel = null;
-
-  function toast(msg){ alert(msg); }
-
-  // ✅ Admin giriş HER HALÜKARDA çalışsın (Supabase bozuk olsa bile panel açılır)
-  function adminGiris(){
-    const sifre = $("adminSifre").value.trim();
-    if(sifre !== "070707") return toast("Yanlış şifre");
-    $("adminPanel").classList.remove("hidden");
-    tumKayitlar(); // Supabase yoksa içeride uyarı verir
-  }
-
-  async function initSupabase(){
-    // CDN henüz yüklenmediyse biraz bekle
-    for(let i=0;i<25;i++){
-      if(window.supabase && typeof window.supabase.createClient === "function") break;
-      await new Promise(r => setTimeout(r, 120));
-    }
-    if(!(window.supabase && typeof window.supabase.createClient === "function")){
-      // Supabase yüklenmemiş olsa bile admin paneli çalışacak (sadece kayıt çekemez)
-      console.warn("Supabase library yüklenemedi.");
-      return;
-    }
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-
-  async function giris(){
-    const ad = $("ad").value.trim();
-    const sifre = $("sifre").value.trim();
-    if(!ad || !sifre) return toast("Ad ve şifre gerekli");
-
-    if(!supabaseClient) return toast("Supabase yüklenmedi (internet/engelleme). Sonra tekrar dene.");
-
-    // Kullanıcı var mı?
-    const res = await supabaseClient
-      .from("personeller")
-      .select("*")
-      .eq("ad_soyad", ad)
-      .maybeSingle();
-
-    if(res.error) return toast("Hata: " + res.error.message);
-
-    if(!res.data){
-      const ins = await supabaseClient
-        .from("personeller")
-        .insert([{ ad_soyad: ad, sifre: sifre }]);
-      if(ins.error) return toast("Kayıt hatası: " + ins.error.message);
-      aktifPersonel = ad;
-    } else {
-      if(res.data.sifre !== sifre) return toast("Şifre yanlış");
-      aktifPersonel = ad;
-    }
-
-    localStorage.setItem("aktifPersonel", ad);
-    $("personelPanel").classList.remove("hidden");
-    kendiKayitlarim();
-  }
-
-  async function kaydet(){
-    if(!aktifPersonel) return toast("Önce giriş yap");
-    if(!supabaseClient) return toast("Supabase yüklenmedi (internet/engelleme).");
-
-    const tur = $("tur").value;
-    const notText = $("notText").value.trim();
-    if(!notText) return toast("Not gerekli");
-
-    const ins = await supabaseClient
-      .from("hareketler")
-      .insert([{ personel_id: aktifPersonel, tur: tur, not_text: notText }]);
-
-    if(ins.error) return toast("Kayıt hatası: " + ins.error.message);
-
-    $("notText").value = "";
-    toast("Kaydedildi");
-    kendiKayitlarim();
-  }
-
-  async function kendiKayitlarim(){
-    if(!aktifPersonel) return;
-    if(!supabaseClient) return toast("Supabase yüklenmedi (internet/engelleme).");
-
-    const res = await supabaseClient
-      .from("hareketler")
-      .select("*")
-      .eq("personel_id", aktifPersonel)
-      .order("created_at", { ascending:false })
-      .limit(200);
-
-    if(res.error) return toast("Liste hatası: " + res.error.message);
-
-    const data = res.data || [];
-    $("liste").innerHTML = data.length
-      ? data.map(x => `<div class="item"><b>${esc(x.tur)}</b> - ${esc(x.not_text)}</div>`).join("")
-      : `<div class="item">Kayıt yok</div>`;
-  }
-
-  async function tumKayitlar(){
-    if(!supabaseClient){
-      $("adminListe").innerHTML = `<div class="item">Supabase yüklenmedi. (Admin paneli açıldı ama kayıt çekemez.)</div>`;
-      return;
-    }
-
-    const res = await supabaseClient
-      .from("hareketler")
-      .select("*")
-      .order("created_at", { ascending:false })
-      .limit(300);
-
-    if(res.error) return toast("Admin liste hatası: " + res.error.message);
-
-    const data = res.data || [];
-    $("adminListe").innerHTML = data.length
-      ? data.map(x => `<div class="item"><b>${esc(x.personel_id)}</b> - ${esc(x.tur)} - ${esc(x.not_text)}</div>`).join("")
-      : `<div class="item">Kayıt yok</div>`;
-  }
-
-  // Buton bağla
-  $("btnAdmin").addEventListener("click", adminGiris);
-  $("btnGiris").addEventListener("click", giris);
-  $("btnKaydet").addEventListener("click", kaydet);
-  $("btnYenileP").addEventListener("click", kendiKayitlarim);
-  $("btnYenileA").addEventListener("click", tumKayitlar);
-
-  // Otomatik oturum
-  window.addEventListener("load", async () => {
-    await initSupabase();
-
-    const kayit = localStorage.getItem("aktifPersonel");
-    if(kayit){
-      aktifPersonel = kayit;
-      $("personelPanel").classList.remove("hidden");
-      // Supabase hazırsa listele
-      if(supabaseClient) kendiKayitlarim();
-    }
-  });
-
-})();
+// Şimdilik boş – Adım 2'de Supabase bağlayacağız.
+console.log("Admin panel hazır.");
 </script>
 
 </body>
