@@ -4,274 +4,173 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Personel Takip ONLINE</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-  body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto; padding:20px; background:#fff; color:#000}
-  input,select,textarea,button{padding:10px; margin:6px 0; width:100%; border:1px solid #ddd; border-radius:10px; font-size:16px}
-  textarea{min-height:90px; resize:vertical}
-  button{cursor:pointer; font-weight:700; border:none}
-  .btn{background:#0b6cff; color:#fff}
-  .btn2{background:#f1f1f1; color:#000; border:1px solid #ddd}
-  .hidden{display:none}
-  .card{border:1px solid #e6e6e6; padding:14px; margin-bottom:16px; border-radius:14px}
-  .row{display:flex; gap:10px; flex-wrap:wrap}
-  .col{flex:1; min-width:240px}
-  .item{padding:10px; border:1px solid #eee; border-radius:12px; margin-top:8px}
-  .badge{display:inline-block; padding:3px 8px; border-radius:999px; background:#f5f5f5; border:1px solid #e9e9e9; font-size:12px; font-weight:800; margin-right:6px}
-  .title{margin:0 0 10px 0}
+body{font-family:Arial;background:#f5f5f5;padding:20px}
+.card{background:#fff;padding:20px;margin-bottom:20px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+input,select,textarea,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #ccc}
+button{cursor:pointer;background:#2d6cdf;color:#fff;border:none}
+button:hover{opacity:0.9}
+.hidden{display:none}
+.kayit{border-bottom:1px solid #eee;padding:8px 0}
+h2{margin-bottom:20px}
 </style>
 </head>
 <body>
 
-<h2 class="title">Personel Takip (ONLINE)</h2>
+<h2>Personel Takip (ONLINE)</h2>
 
-<!-- PERSONEL -->
 <div class="card">
-  <h3>Personel</h3>
+<h3>Personel</h3>
+<input id="ad" placeholder="Ad Soyad">
+<input id="sifre" type="password" placeholder="Şifre">
+<button onclick="giris()">Giriş / Kayıt</button>
 
-  <div class="row">
-    <div class="col">
-      <input id="ad" placeholder="Ad Soyad">
-    </div>
-    <div class="col">
-      <input id="sifre" type="password" placeholder="Şifre">
-    </div>
-  </div>
-
-  <button class="btn" onclick="giris()">Giriş / Kayıt</button>
-
-  <div id="personelPanel" class="hidden">
-    <div class="row">
-      <div class="col">
-        <select id="tur">
-          <option value="not">Not</option>
-          <option value="giris">Giriş</option>
-          <option value="cikis">Çıkış</option>
-          <option value="izin">İzin</option>
-        </select>
-      </div>
-      <div class="col">
-        <button class="btn2" onclick="kendiKayitlarim()">Yenile</button>
-      </div>
-    </div>
-
-    <textarea id="notText" placeholder="Not yaz (zorunlu)"></textarea>
-    <button class="btn" onclick="kaydet()">Kaydı Gönder</button>
-
-    <div id="liste"></div>
-  </div>
+<div id="personelPanel" class="hidden">
+<select id="tur">
+<option value="not">Not</option>
+<option value="giris">Giriş</option>
+<option value="cikis">Çıkış</option>
+<option value="izin">İzin</option>
+</select>
+<textarea id="notText" placeholder="Not yaz (zorunlu)"></textarea>
+<button onclick="kaydet()">Kaydı Gönder</button>
+<button onclick="kendiKayitlarim()">Yenile</button>
+<div id="liste"></div>
+</div>
 </div>
 
-<!-- ADMIN -->
 <div class="card">
-  <h3>Admin</h3>
-  <input id="adminSifre" type="password" placeholder="Admin Şifre (070707)">
-  <button class="btn" onclick="adminGiris()">Admin Giriş</button>
+<h3>Admin</h3>
+<input id="adminSifre" type="password" placeholder="Admin Şifre (070707)">
+<button onclick="adminGiris()">Admin Giriş</button>
 
-  <div id="adminPanel" class="hidden">
-    <button class="btn2" onclick="tumKayitlar()">Yenile</button>
-    <div id="adminListe"></div>
-  </div>
+<div id="adminPanel" class="hidden">
+<button onclick="tumKayitlar()">Yenile</button>
+<div id="adminListe"></div>
+</div>
 </div>
 
 <script>
-  // ✅ SUPABASE BAĞLANTI
-  <script>
-document.addEventListener("DOMContentLoaded", function () {
 
-  const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_st-oRCixt2NLZnE1CFga6A_fCqdcGZn";
+// 🔹 SUPABASE BİLGİLERİ (Dünkü proje)
+const supabase = window.supabase.createClient(
+  "https://sb_publishable_st-oRCixt2NLZnE1CFga6A_fCqdcGZn.supabase.co",
+  "2550d2afd71062bde89a04d5b2ad55ec502d35a1f9b8ff89"
+);
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let aktifPersonel = null;
 
-  let aktifPersonel = null;
+// PERSONEL GİRİŞ
+async function giris(){
+  const ad = document.getElementById("ad").value.trim();
+  const sifre = document.getElementById("sifre").value.trim();
+  if(!ad || !sifre) return alert("Ad ve şifre gerekli");
 
-  function esc(s){
-    return String(s ?? "").replace(/[&<>"]/g, c => ({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;'
-    }[c]));
-  }
+  const { data, error } = await supabase
+    .from("personeller")
+    .select("*")
+    .eq("ad_soyad", ad)
+    .maybeSingle();
 
-  window.giris = async function(){
-    const ad = document.getElementById("ad").value.trim();
-    const sifre = document.getElementById("sifre").value.trim();
-    if(!ad || !sifre) return alert("Ad ve şifre gerekli");
+  if(error){ alert(error.message); return; }
 
-    const res = await supabase
-      .from("personeller")
-      .select("*")
-      .eq("ad_soyad", ad)
-      .maybeSingle();
-
-    if(res.error) return alert("Hata: " + res.error.message);
-
-    if(!res.data){
-      const ins = await supabase.from("personeller").insert([{ ad_soyad: ad, sifre }]);
-      if(ins.error) return alert("Kayıt hatası");
-      aktifPersonel = ad;
-    } else {
-      if(res.data.sifre !== sifre) return alert("Şifre yanlış");
-      aktifPersonel = ad;
-    }
-
-    localStorage.setItem("aktifPersonel", ad);
-    document.getElementById("personelPanel").classList.remove("hidden");
-  };
-
-  window.kaydet = async function(){
-    if(!aktifPersonel) return alert("Önce giriş yap");
-
-    const tur = document.getElementById("tur").value;
-    const notText = document.getElementById("notText").value.trim();
-    if(!notText) return alert("Not gerekli");
-
-    const ins = await supabase.from("hareketler").insert([
-      { personel_id: aktifPersonel, tur, not_text: notText }
+  if(!data){
+    await supabase.from("personeller").insert([
+      { ad_soyad: ad, sifre: sifre }
     ]);
+  } else {
+    if(data.sifre !== sifre) return alert("Şifre yanlış");
+  }
 
-    if(ins.error) return alert("Kayıt hatası");
+  aktifPersonel = ad;
+  localStorage.setItem("aktifPersonel", ad);
+  document.getElementById("personelPanel").classList.remove("hidden");
+  kendiKayitlarim();
+}
 
-    document.getElementById("notText").value = "";
-    alert("Kaydedildi");
-  };
-
-  window.adminGiris = function(){
-    const sifre = document.getElementById("adminSifre").value.trim();
-    if(sifre !== "070707") return alert("Yanlış şifre");
-
-    document.getElementById("adminPanel").classList.remove("hidden");
-  };
-
-});
-</script>
-
-
-  // ✅ PERSONEL GİRİŞ / KAYIT
-  async function giris(){
-    const ad = document.getElementById("ad").value.trim();
-    const sifre = document.getElementById("sifre").value.trim();
-    if(!ad || !sifre) return alert("Ad ve şifre gerekli");
-
-    const res = await supabase
-      .from("personeller")
-      .select("*")
-      .eq("ad_soyad", ad)
-      .maybeSingle();
-
-    if(res.error) return alert("Supabase hata: " + res.error.message);
-
-    if(!res.data){
-      // yoksa oluştur
-      const ins = await supabase.from("personeller").insert([{ ad_soyad: ad, sifre }]);
-      if(ins.error) return alert("Kayıt hatası: " + ins.error.message);
-      aktifPersonel = ad;
-    } else {
-      if(res.data.sifre !== sifre) return alert("Şifre yanlış");
-      aktifPersonel = ad;
-    }
-
-    localStorage.setItem("aktifPersonel", ad);
+// OTOMATİK OTURUM
+window.onload = function(){
+  const kayit = localStorage.getItem("aktifPersonel");
+  if(kayit){
+    aktifPersonel = kayit;
     document.getElementById("personelPanel").classList.remove("hidden");
-    await kendiKayitlarim();
+    kendiKayitlarim();
+  }
+}
+
+// KAYDET
+async function kaydet(){
+  if(!aktifPersonel) return alert("Önce giriş yap");
+
+  const tur = document.getElementById("tur").value;
+  const notText = document.getElementById("notText").value.trim();
+  if(!notText) return alert("Not gerekli");
+
+  const { error } = await supabase.from("hareketler").insert([
+    { personel_id: aktifPersonel, tur: tur, not_text: notText }
+  ]);
+
+  if(error){ alert(error.message); return; }
+
+  document.getElementById("notText").value = "";
+  alert("Kaydedildi");
+  kendiKayitlarim();
+}
+
+// KENDİ KAYITLARI
+async function kendiKayitlarim(){
+  if(!aktifPersonel) return;
+
+  const { data } = await supabase
+    .from("hareketler")
+    .select("*")
+    .eq("personel_id", aktifPersonel)
+    .order("created_at",{ascending:false})
+    .limit(200);
+
+  let html="";
+  if(!data || data.length===0){
+    html="Kayıt yok";
+  }else{
+    data.forEach(x=>{
+      html+=`<div class="kayit"><b>${x.tur}</b> - ${x.not_text}</div>`;
+    });
   }
 
-  // ✅ AYNI CİHAZDA OTOMATİK
-  window.addEventListener("load", async () => {
-    const kayit = localStorage.getItem("aktifPersonel");
-    if(kayit){
-      aktifPersonel = kayit;
-      document.getElementById("personelPanel").classList.remove("hidden");
-      await kendiKayitlarim();
-    }
-  });
+  document.getElementById("liste").innerHTML = html;
+}
 
-  // ✅ KAYDET
-  async function kaydet(){
-    if(!aktifPersonel) return alert("Önce giriş yap");
-    const tur = document.getElementById("tur").value;
-    const notText = document.getElementById("notText").value.trim();
-    if(!notText) return alert("Not gerekli");
+// ADMIN
+function adminGiris(){
+  const sifre = document.getElementById("adminSifre").value.trim();
+  if(sifre !== "070707") return alert("Yanlış şifre");
 
-    const ins = await supabase.from("hareketler").insert([
-      { personel_id: aktifPersonel, tur, not_text: notText }
-    ]);
+  document.getElementById("adminPanel").classList.remove("hidden");
+  tumKayitlar();
+}
 
-    if(ins.error) return alert("Kayıt hatası: " + ins.error.message);
+// TÜM KAYITLAR
+async function tumKayitlar(){
+  const { data } = await supabase
+    .from("hareketler")
+    .select("*")
+    .order("created_at",{ascending:false})
+    .limit(300);
 
-    document.getElementById("notText").value = "";
-    alert("Kaydedildi");
+  let html="";
+  if(!data || data.length===0){
+    html="Kayıt yok";
+  }else{
+    data.forEach(x=>{
+      html+=`<div class="kayit"><b>${x.personel_id}</b> - ${x.tur} - ${x.not_text}</div>`;
+    });
   }
 
-  // ✅ KENDİ KAYITLARI
-  async function kendiKayitlarim(){
-    if(!aktifPersonel) return;
+  document.getElementById("adminListe").innerHTML = html;
+}
 
-    const res = await supabase
-      .from("hareketler")
-      .select("*")
-      .eq("personel_id", aktifPersonel)
-      .order("created_at", { ascending:false })
-      .limit(200);
-
-    if(res.error) return alert("Liste hatası: " + res.error.message);
-
-    const data = res.data || [];
-    let html = "";
-    if(!data.length){
-      html = `<div class="item">Kayıt yok</div>`;
-    } else {
-      data.forEach(x => {
-        html += `
-          <div class="item">
-            <span class="badge">${esc(x.tur)}</span>
-            <span class="badge">${esc(aktifPersonel)}</span>
-            <div style="margin-top:6px">${esc(x.not_text)}</div>
-          </div>`;
-      });
-    }
-    document.getElementById("liste").innerHTML = html;
-  }
-
-  // ✅ ADMIN
-  function adminGiris(){
-    const sifre = document.getElementById("adminSifre").value.trim();
-    if(sifre !== "070707") return alert("Yanlış şifre");
-    document.getElementById("adminPanel").classList.remove("hidden");
-    tumKayitlar();
-  }
-
-  // ✅ TÜM KAYITLAR
-  async function tumKayitlar(){
-    const res = await supabase
-      .from("hareketler")
-      .select("*")
-      .order("created_at", { ascending:false })
-      .limit(300);
-
-    if(res.error) return alert("Admin liste hatası: " + res.error.message);
-
-    const data = res.data || [];
-    let html = "";
-    if(!data.length){
-      html = `<div class="item">Kayıt yok</div>`;
-    } else {
-      data.forEach(x => {
-        html += `
-          <div class="item">
-            <span class="badge">${esc(x.personel_id)}</span>
-            <span class="badge">${esc(x.tur)}</span>
-            <div style="margin-top:6px">${esc(x.not_text)}</div>
-          </div>`;
-      });
-    }
-    document.getElementById("adminListe").innerHTML = html;
-  }
 </script>
-
 </body>
 </html>
