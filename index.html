@@ -38,17 +38,18 @@ button{cursor:pointer}
 </div>
 </div>
 
-<!-- ADMIN -->
-<div class="card">
-<h3>Admin</h3>
-<input id="adminSifre" type="password" placeholder="Admin Şifre">
-<button onclick="adminGiris()">Admin Giriş</button>
+function adminGiris(){
+  const sifre = document.getElementById("adminSifre").value.trim();
 
-<div id="adminPanel" class="hidden">
-<button onclick="tumKayitlar()">Yenile</button>
-<div id="adminListe"></div>
-</div>
-</div>
+  if(sifre !== "070707"){
+    alert("Yanlış şifre");
+    return;
+  }
+
+  document.getElementById("adminPanel").classList.remove("hidden");
+  tumKayitlar();
+}
+
 
 <script>
 
