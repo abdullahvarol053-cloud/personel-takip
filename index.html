@@ -53,11 +53,97 @@ function adminGiris(){
 
 <script>
 
-// 👇 BURAYA KENDİ BİLGİLERİNİ KOY
+<script>
+
 const supabase = window.supabase.createClient(
-  "sb_publishable_st-oRCixt2NLZnE1CFga6A_fCqdcGZn",
-  "2550d2afd71062bde89a04d5b2ad55ec502d35a1f9b8ff89"
+  "https://ngnpocqaznpuggsvwbif.supabase.co",
+  "sb_publishable_st-oRCixt2NLZnE1CFga6A_fCqdcGZn"
 );
+
+let aktifPersonel = null;
+
+// PERSONEL GİRİŞ
+async function giris(){
+  const ad = document.getElementById("ad").value.trim();
+  const sifre = document.getElementById("sifre").value.trim();
+  if(!ad || !sifre) return alert("Ad ve şifre gerekli");
+
+  let { data } = await supabase
+    .from("personeller")
+    .select("*")
+    .eq("ad_soyad", ad)
+    .single();
+
+  if(!data){
+    await supabase.from("personeller").insert([
+      { ad_soyad: ad, sifre: sifre }
+    ]);
+    aktifPersonel = ad;
+  } else {
+    if(data.sifre !== sifre) return alert("Şifre yanlış");
+    aktifPersonel = ad;
+  }
+
+  localStorage.setItem("aktifPersonel", ad);
+  document.getElementById("personelPanel").classList.remove("hidden");
+  kendiKayitlarim();
+}
+
+// ADMIN
+function adminGiris(){
+  const sifre = document.getElementById("adminSifre").value.trim();
+  if(sifre !== "070707") return alert("Yanlış şifre");
+  document.getElementById("adminPanel").classList.remove("hidden");
+  tumKayitlar();
+}
+
+// KAYDET
+async function kaydet(){
+  const tur = document.getElementById("tur").value;
+  const notText = document.getElementById("notText").value;
+  if(!notText) return alert("Not gerekli");
+
+  await supabase.from("hareketler").insert([
+    { personel_id: aktifPersonel, tur: tur, not_text: notText }
+  ]);
+
+  document.getElementById("notText").value = "";
+  alert("Kaydedildi");
+}
+
+// KENDİ KAYITLARI
+async function kendiKayitlarim(){
+  const { data } = await supabase
+    .from("hareketler")
+    .select("*")
+    .eq("personel_id", aktifPersonel)
+    .order("created_at",{ascending:false});
+
+  let html="";
+  data.forEach(x=>{
+    html+=`<div><b>${x.tur}</b> - ${x.not_text}</div>`;
+  });
+
+  document.getElementById("liste").innerHTML = html;
+}
+
+// TÜM KAYITLAR
+async function tumKayitlar(){
+  const { data } = await supabase
+    .from("hareketler")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  let html="";
+  data.forEach(x=>{
+    html+=`<div><b>${x.personel_id}</b> - ${x.tur} - ${x.not_text}</div>`;
+  });
+
+  document.getElementById("adminListe").innerHTML = html;
+}
+
+</script>
+
 
 let aktifPersonel = null;
 
