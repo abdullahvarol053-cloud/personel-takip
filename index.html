@@ -1,1 +1,200 @@
-<!doctype html><html><body>missing</body></html>
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Personel Takip</title>
+  <link rel="stylesheet" href="assets/app.css?v=99">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">PT</div>
+      <div>
+        <div class="title">Personel Takip</div>
+        <div class="sub">Manuel gönderim • Canlı dinleme yok • Silme yok</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tabPersonel" class="tab active" type="button">Personel</button>
+      <button id="tabAdmin" class="tab" type="button">Admin</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- PERSONEL -->
+    <section id="viewPersonel" class="card">
+      <div class="row">
+        <div class="col">
+          <label class="lbl">Personel</label>
+          <div class="inline">
+            <select id="personSelect" class="inp"></select>
+            <button id="btnAddPerson" class="btn ghost" type="button">+ Ekle</button>
+          </div>
+          <div class="hint">Personel kendi adını ekleyebilir.</div>
+        </div>
+
+        <div class="col">
+          <label class="lbl">Görüntüleme</label>
+          <div class="pillrow" id="personRangePills">
+            <span class="pill active" data-range="3">Son 3 Gün</span>
+            <span class="pill" data-range="1">Bugün</span>
+            <span class="pill" data-range="7">Son 7 Gün</span>
+          </div>
+          <div class="hint">Telefon dolmasın diye personelde varsayılan son 3 gün.</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label class="lbl">Not (zorunlu)</label>
+          <textarea id="note" class="inp area" placeholder="Örn: Mazot aldı / Yağ aldı / Parça aldı / İzin aldı / Geldim"></textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label class="lbl">İşlem Türü</label>
+          <div class="btnrow" id="typeButtons">
+            <button class="btn type active" data-type="not" type="button">Sadece Not</button>
+            <button class="btn type" data-type="giris" type="button">Giriş</button>
+            <button class="btn type" data-type="cikis" type="button">Çıkış</button>
+            <button class="btn type" data-type="izin" type="button">İzin</button>
+          </div>
+          <div class="hint">Tür seçmezsen “Sadece Not” olur.</div>
+        </div>
+      </div>
+
+      <div class="row actions">
+        <button id="btnSend" class="btn primary" type="button" disabled>Kaydı Gönder</button>
+        <button id="btnRefreshP" class="btn" type="button">Yenile</button>
+      </div>
+
+      <hr class="sep">
+
+      <div class="row">
+        <div class="col">
+          <div class="sectionTitle">Kayıtlar</div>
+          <div id="listPersonel" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="viewAdmin" class="card hidden">
+      <div id="adminGate" class="gate">
+        <div class="gateTitle">Admin Girişi</div>
+        <div class="gateSub">Admin tek kişi. Bir kez giriş yapınca cihazda kayıtlı kalır. Çıkış gerekmez.</div>
+        <div class="row">
+          <div class="col">
+            <label class="lbl">Admin PIN</label>
+            <input id="adminPin" class="inp" inputmode="numeric" placeholder="PIN (4-8 hane)">
+            <div class="hint">İlk girişte bu PIN kaydedilir. Sonraki girişler aynı PIN ile.</div>
+          </div>
+        </div>
+        <div class="row actions">
+          <button id="btnAdminLogin" class="btn primary" type="button">Giriş</button>
+        </div>
+      </div>
+
+      <div id="adminPanel" class="hidden">
+        <div class="row">
+          <div class="col">
+            <div class="sectionTitle">Filtre</div>
+            <div class="grid2">
+              <div>
+                <label class="lbl">Arama</label>
+                <input id="searchAdmin" class="inp" placeholder="Not, personel, tür ara…">
+                <div class="hint">Canlı değil. Yenile’ye basınca uygular.</div>
+              </div>
+              <div>
+                <label class="lbl">Personel</label>
+                <select id="personFilterAdmin" class="inp"></select>
+              </div>
+              <div>
+                <label class="lbl">Hızlı Tarih</label>
+                <div class="pillrow" id="adminRangePills">
+                  <span class="pill" data-range="1">Bugün</span>
+                  <span class="pill active" data-range="7">Son 7 Gün</span>
+                  <span class="pill" data-range="30">Son 30 Gün</span>
+                </div>
+              </div>
+              <div>
+                <label class="lbl">Özel Tarih Aralığı</label>
+                <div class="inline">
+                  <input id="fromDate" class="inp" type="date">
+                  <input id="toDate" class="inp" type="date">
+                </div>
+                <div class="hint">Tarih seçersen hızlı filtreler kapanır.</div>
+              </div>
+            </div>
+
+            <div class="row actions">
+              <button id="btnRefreshA" class="btn" type="button">Yenile</button>
+              <button id="btnExportExcel" class="btn" type="button">Excel İndir</button>
+              <button id="btnBackup" class="btn" type="button">Yedekle (JSON)</button>
+              <label class="btn ghost filebtn">
+                Yedekten Al
+                <input id="restoreInput" type="file" accept="application/json">
+              </label>
+            </div>
+
+            <div class="hint small">Silme yok. Düzeltme var. Admin kişi seçince tüm hareketleri görür.</div>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="row">
+          <div class="col">
+            <div class="sectionTitle">Kayıtlar (Admin)</div>
+            <div id="listAdmin" class="list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODALS -->
+    <div id="modalBackdrop" class="backdrop hidden"></div>
+
+    <div id="modalAddPerson" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modalTitle">Personel Ekle</div>
+      <input id="newPersonName" class="inp" placeholder="Ad Soyad (örn: Ali Varol)">
+      <div class="row actions">
+        <button id="btnSavePerson" class="btn primary" type="button">Kaydet</button>
+        <button class="btn" data-close="modalAddPerson" type="button">Vazgeç</button>
+      </div>
+    </div>
+
+    <div id="modalEdit" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modalTitle">Kaydı Düzelt</div>
+      <div class="grid2">
+        <div>
+          <label class="lbl">Tür</label>
+          <select id="editType" class="inp">
+            <option value="not">Sadece Not</option>
+            <option value="giris">Giriş</option>
+            <option value="cikis">Çıkış</option>
+            <option value="izin">İzin</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Tarih/Saat</label>
+          <input id="editTs" class="inp" disabled>
+        </div>
+      </div>
+      <label class="lbl">Not</label>
+      <textarea id="editNote" class="inp area" placeholder="Not"></textarea>
+      <div class="row actions">
+        <button id="btnSaveEdit" class="btn primary" type="button">Kaydet</button>
+        <button class="btn" data-close="modalEdit" type="button">Vazgeç</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </main>
+
+  <script src="assets/app.js?v=99"></script>
+</body>
+</html>
