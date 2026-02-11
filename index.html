@@ -57,12 +57,6 @@ th { background:#f9fafb; text-align:left; }
   Not: <b id="sumNote">0</b>
 </div>
 
-<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-  <button class="primary">Raporu İndir (.xlsx)</button>
-  <button>Yedek Al (JSON)</button>
-  <button class="danger">Yedekten Al</button>
-</div>
-
 </div>
 
 <div class="card">
@@ -77,21 +71,19 @@ th { background:#f9fafb; text-align:left; }
       </tr>
     </thead>
     <tbody id="dataTable">
-      <tr><td colspan="5" style="text-align:center;">Veri yok</td></tr>
+      <tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>
     </tbody>
   </table>
 </div>
 
 <script>
 
-// ==========================
-// 🔥 SUPABASE BİLGİLERİNİ YAZ
-// ==========================
-
+// 🔥 SUPABASE BAĞLANTI
 const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allData = [];
 
@@ -112,7 +104,7 @@ window.addEventListener("load", async () => {
 // Veri çekme
 async function loadData(start, end) {
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("hareketler")
     .select("*")
     .gte("tarih", start)
@@ -120,7 +112,8 @@ async function loadData(start, end) {
     .order("tarih", { ascending:false });
 
   if (error) {
-    alert("Veri çekme hatası");
+    document.getElementById("dataTable").innerHTML =
+      `<tr><td colspan="5" style="text-align:center;color:red;">Veri çekme hatası</td></tr>`;
     console.error(error);
     return;
   }
