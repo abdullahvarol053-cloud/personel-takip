@@ -1,200 +1,157 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Personel Takip</title>
-  <link rel="stylesheet" href="assets/app.css?v=99">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personel Takip ONLINE</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:Arial;padding:20px;background:#fff;color:#000}
+input,select,textarea,button{padding:8px;margin:5px 0;width:100%}
+button{cursor:pointer}
+.hidden{display:none}
+.card{border:1px solid #ddd;padding:15px;margin-bottom:20px}
+</style>
 </head>
 <body>
-  <header class="top">
-    <div class="brand">
-      <div class="logo">PT</div>
-      <div>
-        <div class="title">Personel Takip</div>
-        <div class="sub">Manuel gönderim • Canlı dinleme yok • Silme yok</div>
-      </div>
-    </div>
 
-    <div class="tabs">
-      <button id="tabPersonel" class="tab active" type="button">Personel</button>
-      <button id="tabAdmin" class="tab" type="button">Admin</button>
-    </div>
-  </header>
+<h2>Personel Takip (ONLINE)</h2>
 
-  <main class="wrap">
-    <!-- PERSONEL -->
-    <section id="viewPersonel" class="card">
-      <div class="row">
-        <div class="col">
-          <label class="lbl">Personel</label>
-          <div class="inline">
-            <select id="personSelect" class="inp"></select>
-            <button id="btnAddPerson" class="btn ghost" type="button">+ Ekle</button>
-          </div>
-          <div class="hint">Personel kendi adını ekleyebilir.</div>
-        </div>
+<!-- PERSONEL -->
+<div class="card">
+<h3>Personel</h3>
+<input id="ad" placeholder="Ad Soyad">
+<input id="sifre" type="password" placeholder="Şifre">
+<button onclick="giris()">Giriş / Kayıt</button>
 
-        <div class="col">
-          <label class="lbl">Görüntüleme</label>
-          <div class="pillrow" id="personRangePills">
-            <span class="pill active" data-range="3">Son 3 Gün</span>
-            <span class="pill" data-range="1">Bugün</span>
-            <span class="pill" data-range="7">Son 7 Gün</span>
-          </div>
-          <div class="hint">Telefon dolmasın diye personelde varsayılan son 3 gün.</div>
-        </div>
-      </div>
+<div id="personelPanel" class="hidden">
+<select id="tur">
+<option value="not">Not</option>
+<option value="giris">Giriş</option>
+<option value="cikis">Çıkış</option>
+<option value="izin">İzin</option>
+</select>
+<textarea id="notText" placeholder="Not yaz"></textarea>
+<button onclick="kaydet()">Kaydı Gönder</button>
+<button onclick="kendiKayitlarim()">Yenile</button>
+<div id="liste"></div>
+</div>
+</div>
 
-      <div class="row">
-        <div class="col">
-          <label class="lbl">Not (zorunlu)</label>
-          <textarea id="note" class="inp area" placeholder="Örn: Mazot aldı / Yağ aldı / Parça aldı / İzin aldı / Geldim"></textarea>
-        </div>
-      </div>
+<!-- ADMIN -->
+<div class="card">
+<h3>Admin</h3>
+<input id="adminSifre" type="password" placeholder="Admin Şifre">
+<button onclick="adminGiris()">Admin Giriş</button>
 
-      <div class="row">
-        <div class="col">
-          <label class="lbl">İşlem Türü</label>
-          <div class="btnrow" id="typeButtons">
-            <button class="btn type active" data-type="not" type="button">Sadece Not</button>
-            <button class="btn type" data-type="giris" type="button">Giriş</button>
-            <button class="btn type" data-type="cikis" type="button">Çıkış</button>
-            <button class="btn type" data-type="izin" type="button">İzin</button>
-          </div>
-          <div class="hint">Tür seçmezsen “Sadece Not” olur.</div>
-        </div>
-      </div>
+<div id="adminPanel" class="hidden">
+<button onclick="tumKayitlar()">Yenile</button>
+<div id="adminListe"></div>
+</div>
+</div>
 
-      <div class="row actions">
-        <button id="btnSend" class="btn primary" type="button" disabled>Kaydı Gönder</button>
-        <button id="btnRefreshP" class="btn" type="button">Yenile</button>
-      </div>
+<script>
 
-      <hr class="sep">
+// 👇 BURAYA KENDİ BİLGİLERİNİ KOY
+const supabase = window.supabase.createClient(
+  "sb_publishable_st-oRCixt2NLZnE1CFga6A_fCqdcGZn",
+  "2550d2afd71062bde89a04d5b2ad55ec502d35a1f9b8ff89"
+);
 
-      <div class="row">
-        <div class="col">
-          <div class="sectionTitle">Kayıtlar</div>
-          <div id="listPersonel" class="list"></div>
-        </div>
-      </div>
-    </section>
+let aktifPersonel = null;
 
-    <!-- ADMIN -->
-    <section id="viewAdmin" class="card hidden">
-      <div id="adminGate" class="gate">
-        <div class="gateTitle">Admin Girişi</div>
-        <div class="gateSub">Admin tek kişi. Bir kez giriş yapınca cihazda kayıtlı kalır. Çıkış gerekmez.</div>
-        <div class="row">
-          <div class="col">
-            <label class="lbl">Admin PIN</label>
-            <input id="adminPin" class="inp" inputmode="numeric" placeholder="PIN (4-8 hane)">
-            <div class="hint">İlk girişte bu PIN kaydedilir. Sonraki girişler aynı PIN ile.</div>
-          </div>
-        </div>
-        <div class="row actions">
-          <button id="btnAdminLogin" class="btn primary" type="button">Giriş</button>
-        </div>
-      </div>
+// PERSONEL GİRİŞ
+async function giris(){
+  const ad = document.getElementById("ad").value.trim();
+  const sifre = document.getElementById("sifre").value.trim();
+  if(!ad || !sifre) return alert("Ad ve şifre gerekli");
 
-      <div id="adminPanel" class="hidden">
-        <div class="row">
-          <div class="col">
-            <div class="sectionTitle">Filtre</div>
-            <div class="grid2">
-              <div>
-                <label class="lbl">Arama</label>
-                <input id="searchAdmin" class="inp" placeholder="Not, personel, tür ara…">
-                <div class="hint">Canlı değil. Yenile’ye basınca uygular.</div>
-              </div>
-              <div>
-                <label class="lbl">Personel</label>
-                <select id="personFilterAdmin" class="inp"></select>
-              </div>
-              <div>
-                <label class="lbl">Hızlı Tarih</label>
-                <div class="pillrow" id="adminRangePills">
-                  <span class="pill" data-range="1">Bugün</span>
-                  <span class="pill active" data-range="7">Son 7 Gün</span>
-                  <span class="pill" data-range="30">Son 30 Gün</span>
-                </div>
-              </div>
-              <div>
-                <label class="lbl">Özel Tarih Aralığı</label>
-                <div class="inline">
-                  <input id="fromDate" class="inp" type="date">
-                  <input id="toDate" class="inp" type="date">
-                </div>
-                <div class="hint">Tarih seçersen hızlı filtreler kapanır.</div>
-              </div>
-            </div>
+  // önce var mı bak
+  let { data } = await supabase
+    .from("personeller")
+    .select("*")
+    .eq("ad_soyad", ad)
+    .single();
 
-            <div class="row actions">
-              <button id="btnRefreshA" class="btn" type="button">Yenile</button>
-              <button id="btnExportExcel" class="btn" type="button">Excel İndir</button>
-              <button id="btnBackup" class="btn" type="button">Yedekle (JSON)</button>
-              <label class="btn ghost filebtn">
-                Yedekten Al
-                <input id="restoreInput" type="file" accept="application/json">
-              </label>
-            </div>
+  if(!data){
+    // yoksa oluştur
+    await supabase.from("personeller").insert([
+      { ad_soyad: ad, sifre: sifre }
+    ]);
+    aktifPersonel = ad;
+  } else {
+    if(data.sifre !== sifre) return alert("Şifre yanlış");
+    aktifPersonel = ad;
+  }
 
-            <div class="hint small">Silme yok. Düzeltme var. Admin kişi seçince tüm hareketleri görür.</div>
-          </div>
-        </div>
+  localStorage.setItem("aktifPersonel", ad);
+  document.getElementById("personelPanel").classList.remove("hidden");
+  kendiKayitlarim();
+}
 
-        <hr class="sep">
+// OTOMATİK OTURUM
+window.onload = function(){
+  const kayit = localStorage.getItem("aktifPersonel");
+  if(kayit){
+    aktifPersonel = kayit;
+    document.getElementById("personelPanel").classList.remove("hidden");
+    kendiKayitlarim();
+  }
+}
 
-        <div class="row">
-          <div class="col">
-            <div class="sectionTitle">Kayıtlar (Admin)</div>
-            <div id="listAdmin" class="list"></div>
-          </div>
-        </div>
-      </div>
-    </section>
+// KAYDET
+async function kaydet(){
+  const tur = document.getElementById("tur").value;
+  const notText = document.getElementById("notText").value;
+  if(!notText) return alert("Not gerekli");
 
-    <!-- MODALS -->
-    <div id="modalBackdrop" class="backdrop hidden"></div>
+  await supabase.from("hareketler").insert([
+    { personel_id: aktifPersonel, tur: tur, not_text: notText }
+  ]);
 
-    <div id="modalAddPerson" class="modal hidden" role="dialog" aria-modal="true">
-      <div class="modalTitle">Personel Ekle</div>
-      <input id="newPersonName" class="inp" placeholder="Ad Soyad (örn: Ali Varol)">
-      <div class="row actions">
-        <button id="btnSavePerson" class="btn primary" type="button">Kaydet</button>
-        <button class="btn" data-close="modalAddPerson" type="button">Vazgeç</button>
-      </div>
-    </div>
+  document.getElementById("notText").value = "";
+  alert("Kaydedildi");
+}
 
-    <div id="modalEdit" class="modal hidden" role="dialog" aria-modal="true">
-      <div class="modalTitle">Kaydı Düzelt</div>
-      <div class="grid2">
-        <div>
-          <label class="lbl">Tür</label>
-          <select id="editType" class="inp">
-            <option value="not">Sadece Not</option>
-            <option value="giris">Giriş</option>
-            <option value="cikis">Çıkış</option>
-            <option value="izin">İzin</option>
-          </select>
-        </div>
-        <div>
-          <label class="lbl">Tarih/Saat</label>
-          <input id="editTs" class="inp" disabled>
-        </div>
-      </div>
-      <label class="lbl">Not</label>
-      <textarea id="editNote" class="inp area" placeholder="Not"></textarea>
-      <div class="row actions">
-        <button id="btnSaveEdit" class="btn primary" type="button">Kaydet</button>
-        <button class="btn" data-close="modalEdit" type="button">Vazgeç</button>
-      </div>
-    </div>
+// KENDİ KAYITLARI
+async function kendiKayitlarim(){
+  const { data } = await supabase
+    .from("hareketler")
+    .select("*")
+    .eq("personel_id", aktifPersonel)
+    .order("created_at",{ascending:false});
 
-    <div id="toast" class="toast hidden"></div>
-  </main>
+  let html="";
+  data.forEach(x=>{
+    html+=`<div><b>${x.tur}</b> - ${x.not_text}</div>`;
+  });
 
-  <script src="assets/app.js?v=99"></script>
+  document.getElementById("liste").innerHTML = html;
+}
+
+// ADMIN
+function adminGiris(){
+  const sifre = document.getElementById("adminSifre").value;
+  if(sifre !== "070707") return alert("Yanlış");
+  document.getElementById("adminPanel").classList.remove("hidden");
+  tumKayitlar();
+}
+
+// TÜM KAYITLAR
+async function tumKayitlar(){
+  const { data } = await supabase
+    .from("hareketler")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  let html="";
+  data.forEach(x=>{
+    html+=`<div><b>${x.personel_id}</b> - ${x.tur} - ${x.not_text}</div>`;
+  });
+
+  document.getElementById("adminListe").innerHTML = html;
+}
+
+</script>
 </body>
 </html>
