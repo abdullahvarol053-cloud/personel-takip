@@ -4,67 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Personel Takip - Admin</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background:#f3f4f6;
-  margin:0;
-  padding:20px;
-}
-
-.card {
-  background:#fff;
-  padding:16px;
-  border-radius:14px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.05);
-  margin-bottom:14px;
-}
-
-input, button {
-  border-radius:12px;
-  padding:10px;
-  border:1px solid #d1d5db;
-}
-
-button.primary {
-  background:#2563eb;
-  color:#fff;
-  border:none;
-  cursor:pointer;
-}
-
-button.danger {
-  background:#dc2626;
-  color:#fff;
-  border:none;
-  cursor:pointer;
-}
-
-#summaryBox {
-  background:#fafafa;
-  border:1px dashed #d1d5db;
-  padding:10px;
-  border-radius:12px;
-}
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-}
-
-th, td {
-  border-bottom:1px solid #e5e7eb;
-  padding:8px;
-  font-size:14px;
-}
-
-th {
-  background:#f9fafb;
-  text-align:left;
-}
+body { font-family: Arial, sans-serif; background:#f3f4f6; margin:0; padding:20px; }
+.card { background:#fff; padding:16px; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.05); margin-bottom:14px; }
+input, button { border-radius:12px; padding:10px; border:1px solid #d1d5db; }
+button.primary { background:#2563eb; color:#fff; border:none; cursor:pointer; }
+button.danger { background:#dc2626; color:#fff; border:none; cursor:pointer; }
+#summaryBox { background:#fafafa; border:1px dashed #d1d5db; padding:10px; border-radius:12px; margin-top:10px; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { border-bottom:1px solid #e5e7eb; padding:8px; font-size:14px; }
+th { background:#f9fafb; text-align:left; }
 </style>
 </head>
 
@@ -74,50 +26,45 @@ th {
 
 <div class="card">
 
-  <!-- Tarih Filtre -->
-  <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end;">
-    <div>
-      <label>Başlangıç</label><br>
-      <input type="date" id="dtStart">
-    </div>
-
-    <div>
-      <label>Bitiş</label><br>
-      <input type="date" id="dtEnd">
-    </div>
-
-    <button class="primary" id="btnFilter">Filtrele</button>
-    <button id="btnClear">Temizle</button>
-
-    <div id="filterInfo" style="margin-left:auto; font-size:12px;">
-      Filtre: Bugün
-    </div>
+<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end;">
+  <div>
+    <label>Başlangıç</label><br>
+    <input type="date" id="dtStart">
   </div>
 
-  <!-- Arama -->
-  <div style="margin-top:12px;">
-    <input type="text" id="txtSearch" placeholder="🔎 Personel / Tür / Not / Tarih / Saat ara..." style="width:100%;">
+  <div>
+    <label>Bitiş</label><br>
+    <input type="date" id="dtEnd">
   </div>
 
-  <!-- Özet -->
-  <div id="summaryBox" style="margin-top:12px;">
-    <b>Özet</b> —
-    Giriş: <b id="sumIn">0</b> ·
-    Çıkış: <b id="sumOut">0</b> ·
-    İzin: <b id="sumLeave">0</b> ·
-    Not: <b id="sumNote">0</b>
-  </div>
+  <button class="primary" id="btnFilter">Filtrele</button>
+  <button id="btnClear">Temizle</button>
 
-  <!-- Butonlar -->
-  <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-    <button class="primary" id="btnExcel">Raporu İndir (.xlsx)</button>
-    <button id="btnBackup">Yedek Al (JSON)</button>
-    <button class="danger" id="btnRestore">Yedekten Al</button>
+  <div id="filterInfo" style="margin-left:auto; font-size:12px;">
+    Filtre: Bugün
   </div>
+</div>
+
+<div style="margin-top:12px;">
+  <input type="text" id="txtSearch" placeholder="🔎 Personel / Tür / Not / Tarih / Saat ara..." style="width:100%;">
+</div>
+
+<div id="summaryBox">
+  <b>Özet</b> —
+  Giriş: <b id="sumIn">0</b> ·
+  Çıkış: <b id="sumOut">0</b> ·
+  İzin: <b id="sumLeave">0</b> ·
+  Not: <b id="sumNote">0</b>
+</div>
+
+<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+  <button class="primary">Raporu İndir (.xlsx)</button>
+  <button>Yedek Al (JSON)</button>
+  <button class="danger">Yedekten Al</button>
+</div>
 
 </div>
 
-<!-- Liste -->
 <div class="card">
   <table>
     <thead>
@@ -136,8 +83,113 @@ th {
 </div>
 
 <script>
-// Şimdilik boş – Adım 2'de Supabase bağlayacağız.
-console.log("Admin panel hazır.");
+
+// ==========================
+// 🔥 SUPABASE BİLGİLERİNİ YAZ
+// ==========================
+
+const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allData = [];
+
+// Bugün YYYY-MM-DD
+function getToday() {
+  const d = new Date();
+  return d.toISOString().split("T")[0];
+}
+
+// Sayfa açılış
+window.addEventListener("load", async () => {
+  const today = getToday();
+  document.getElementById("dtStart").value = today;
+  document.getElementById("dtEnd").value = today;
+  await loadData(today, today);
+});
+
+// Veri çekme
+async function loadData(start, end) {
+
+  const { data, error } = await supabase
+    .from("hareketler")
+    .select("*")
+    .gte("tarih", start)
+    .lte("tarih", end)
+    .order("tarih", { ascending:false });
+
+  if (error) {
+    alert("Veri çekme hatası");
+    console.error(error);
+    return;
+  }
+
+  allData = data || [];
+  renderTable(allData);
+  calculateSummary(allData);
+
+  document.getElementById("filterInfo").innerText =
+    `Filtre: ${start} - ${end}`;
+}
+
+// Tablo yazdır
+function renderTable(data) {
+  const tbody = document.getElementById("dataTable");
+  tbody.innerHTML = "";
+
+  if (data.length === 0) {
+    tbody.innerHTML =
+      `<tr><td colspan="5" style="text-align:center;">Veri yok</td></tr>`;
+    return;
+  }
+
+  data.forEach(item => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${item.tarih}</td>
+        <td>${item.saat}</td>
+        <td>${item.personel}</td>
+        <td>${item.tur}</td>
+        <td>${item.not || ""}</td>
+      </tr>
+    `;
+  });
+}
+
+// Özet
+function calculateSummary(data) {
+  let giris=0, cikis=0, izin=0, not=0;
+
+  data.forEach(item=>{
+    if(item.tur==="Giriş") giris++;
+    if(item.tur==="Çıkış") cikis++;
+    if(item.tur==="İzin") izin++;
+    if(item.tur==="Not") not++;
+  });
+
+  document.getElementById("sumIn").innerText = giris;
+  document.getElementById("sumOut").innerText = cikis;
+  document.getElementById("sumLeave").innerText = izin;
+  document.getElementById("sumNote").innerText = not;
+}
+
+// Filtre butonu
+document.getElementById("btnFilter").addEventListener("click", async ()=>{
+  const start = document.getElementById("dtStart").value;
+  const end = document.getElementById("dtEnd").value;
+  if(!start || !end) return alert("Tarih seç");
+  await loadData(start,end);
+});
+
+// Temizle
+document.getElementById("btnClear").addEventListener("click", async ()=>{
+  const today = getToday();
+  document.getElementById("dtStart").value = today;
+  document.getElementById("dtEnd").value = today;
+  await loadData(today,today);
+});
+
 </script>
 
 </body>
