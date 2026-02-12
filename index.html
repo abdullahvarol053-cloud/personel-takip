@@ -3,73 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personel Takip - Admin</title>
-
+<title>TEST</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-body { font-family: Arial, sans-serif; background:#f3f4f6; margin:0; padding:20px; }
-.card { background:#fff; padding:16px; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.05); margin-bottom:14px; }
-input, button { border-radius:12px; padding:10px; border:1px solid #d1d5db; }
-button.primary { background:#2563eb; color:#fff; border:none; cursor:pointer; }
-#summaryBox { background:#fafafa; border:1px dashed #d1d5db; padding:10px; border-radius:12px; margin-top:10px; }
-table { width:100%; border-collapse:collapse; margin-top:10px; }
-th, td { border-bottom:1px solid #e5e7eb; padding:8px; font-size:14px; }
-th { background:#f9fafb; text-align:left; }
-</style>
 </head>
-
 <body>
 
-<h2>📊 Personel Takip - Admin Panel</h2>
+<h2>Veri Test</h2>
+<button onclick="hepsiniGetir()">Hepsini Getir</button>
 
-<div class="card">
-
-<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end;">
-  <div>
-    <label>Başlangıç</label><br>
-    <input type="date" id="dtStart">
-  </div>
-
-  <div>
-    <label>Bitiş</label><br>
-    <input type="date" id="dtEnd">
-  </div>
-
-  <button class="primary" onclick="manuelFiltre()">Filtrele</button>
-  <button onclick="buguneDon()">Temizle</button>
-
-  <div id="filterInfo" style="margin-left:auto; font-size:12px;">
-    Filtre: Bugün
-  </div>
-</div>
-
-<div id="summaryBox">
-  <b>Özet</b> —
-  Giriş: <b id="sumIn">0</b> ·
-  Çıkış: <b id="sumOut">0</b> ·
-  İzin: <b id="sumLeave">0</b> ·
-  Not: <b id="sumNote">0</b>
-</div>
-
-</div>
-
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Tarih</th>
-        <th>Saat</th>
-        <th>Personel</th>
-        <th>Tür</th>
-        <th>Not</th>
-      </tr>
-    </thead>
-    <tbody id="dataTable">
-      <tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>
-    </tbody>
-  </table>
-</div>
+<pre id="sonuc"></pre>
 
 <script>
 
@@ -79,97 +21,19 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let allData = [];
-
-function getToday() {
-  return new Date().toISOString().split("T")[0];
-}
-
-window.onload = async function(){
-  const today = getToday();
-  document.getElementById("dtStart").value = today;
-  document.getElementById("dtEnd").value = today;
-  await loadData(today, today);
-};
-
-async function loadData(start, end){
+async function hepsiniGetir(){
 
   const { data, error } = await supabaseClient
     .from("hareketler_admin")
-    .select("*")
-    .gte("tarih", start)
-    .lte("tarih", end)
-    .order("tarih", { ascending:false })
-    .order("saat", { ascending:false });
+    .select("*");
 
   if(error){
-    document.getElementById("dataTable").innerHTML =
-      `<tr><td colspan="5" style="text-align:center;color:red;">Veri çekme hatası</td></tr>`;
+    document.getElementById("sonuc").innerText = "HATA:\n" + JSON.stringify(error,null,2);
     return;
   }
 
-  allData = data || [];
-  renderTable();
-  calculateSummary();
-  document.getElementById("filterInfo").innerText =
-    `Filtre: ${start} - ${end}`;
-}
-
-function renderTable(){
-  const tbody = document.getElementById("dataTable");
-  tbody.innerHTML = "";
-
-  if(allData.length === 0){
-    tbody.innerHTML =
-      `<tr><td colspan="5" style="text-align:center;">Veri yok</td></tr>`;
-    return;
-  }
-
-  allData.forEach(item=>{
-    tbody.innerHTML += `
-      <tr>
-        <td>${item.tarih}</td>
-        <td>${item.saat}</td>
-        <td>${item.personel}</td>
-        <td>${item.tur}</td>
-        <td>${item.not || ""}</td>
-      </tr>
-    `;
-  });
-}
-
-function calculateSummary(){
-  let giris=0, cikis=0, izin=0, not=0;
-
-  allData.forEach(item=>{
-    const tur = (item.tur || "").toLowerCase();
-    if(tur==="giris") giris++;
-    if(tur==="cikis") cikis++;
-    if(tur==="izin") izin++;
-    if(tur==="not") not++;
-  });
-
-  document.getElementById("sumIn").innerText = giris;
-  document.getElementById("sumOut").innerText = cikis;
-  document.getElementById("sumLeave").innerText = izin;
-  document.getElementById("sumNote").innerText = not;
-}
-
-async function manuelFiltre(){
-  const start = document.getElementById("dtStart").value;
-  const end = document.getElementById("dtEnd").value;
-  if(!start || !end){
-    alert("Tarih seç");
-    return;
-  }
-  await loadData(start,end);
-}
-
-async function buguneDon(){
-  const today = getToday();
-  document.getElementById("dtStart").value = today;
-  document.getElementById("dtEnd").value = today;
-  await loadData(today,today);
+  document.getElementById("sonuc").innerText =
+    JSON.stringify(data,null,2);
 }
 
 </script>
