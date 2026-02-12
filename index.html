@@ -515,9 +515,11 @@ $("btnKaydet").onclick = async ()=>{
   }
 
   try{
-    const payload = { id: localRow.id };
-    payload[COL_H_PER] = ad;
-    payload[COL_H_NOT] = note;
+   const payload = {};
+payload[COL_H_PER] = ad;
+payload[COL_H_TUR] = DEFAULT_TUR;
+payload[COL_H_NOT] = note;
+
 
     const { error } = await supa.from(T_HAREKETLER).insert(payload);
 
