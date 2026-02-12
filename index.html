@@ -28,6 +28,10 @@ Bitiş <input type="date" id="dtEnd">
 <button class="primary" id="btnBackup">💾 Yedek</button>
 <button class="danger" id="btnRestore">📂 Geri Yükle</button>
 <input type="file" id="fileRestore" accept=".json" hidden>
+
+<div style="margin-top:10px;">
+<input type="text" id="txtSearch" placeholder="🔎 Personel / Tür / Not ara..." style="width:100%;">
+</div>
 </div>
 
 <div class="card">
@@ -55,6 +59,8 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let currentData = [];
+
 function getToday(){
   return new Date().toISOString().split("T")[0];
 }
@@ -81,13 +87,19 @@ async function loadData(start,end){
     return;
   }
 
-  if(!data || data.length===0){
+  currentData = data || [];
+  renderTable(currentData);
+}
+
+function renderTable(data){
+
+  dataTable.innerHTML="";
+
+  if(!data.length){
     dataTable.innerHTML =
     `<tr><td colspan="5" style="text-align:center;">Veri yok</td></tr>`;
     return;
   }
-
-  dataTable.innerHTML="";
 
   data.forEach(item=>{
     const d = new Date(item.created_at);
@@ -148,6 +160,19 @@ fileRestore.onchange = async (e)=>{
 
   const today=getToday();
   await loadData(today,today);
+};
+
+txtSearch.oninput = function(){
+
+  const val = this.value.toLowerCase();
+
+  const filtered = currentData.filter(item=>{
+    return (item.personel_id || "").toLowerCase().includes(val) ||
+           (item.tur || "").toLowerCase().includes(val) ||
+           (item.not_text || "").toLowerCase().includes(val);
+  });
+
+  renderTable(filtered);
 };
 
 </script>
