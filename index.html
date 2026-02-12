@@ -78,7 +78,6 @@ th { background:#f9fafb; text-align:left; }
 
 <script>
 
-// 🔥 SUPABASE BAĞLANTI
 const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
 
@@ -87,13 +86,11 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allData = [];
 
-// Bugün YYYY-MM-DD
 function getToday() {
   const d = new Date();
   return d.toISOString().split("T")[0];
 }
 
-// Sayfa açılış
 window.addEventListener("load", async () => {
   const today = getToday();
   document.getElementById("dtStart").value = today;
@@ -101,7 +98,6 @@ window.addEventListener("load", async () => {
   await loadData(today, today);
 });
 
-// Veri çekme
 async function loadData(start, end) {
 
   const { data, error } = await supabaseClient
@@ -109,12 +105,13 @@ async function loadData(start, end) {
     .select("*")
     .gte("tarih", start)
     .lte("tarih", end)
-    .order("tarih", { ascending:false });
+    .order("tarih", { ascending:false })
+    .order("saat", { ascending:false });
 
   if (error) {
+    console.error(error);
     document.getElementById("dataTable").innerHTML =
       `<tr><td colspan="5" style="text-align:center;color:red;">Veri çekme hatası</td></tr>`;
-    console.error(error);
     return;
   }
 
@@ -126,7 +123,6 @@ async function loadData(start, end) {
     `Filtre: ${start} - ${end}`;
 }
 
-// Tablo yazdır
 function renderTable(data) {
   const tbody = document.getElementById("dataTable");
   tbody.innerHTML = "";
@@ -140,25 +136,26 @@ function renderTable(data) {
   data.forEach(item => {
     tbody.innerHTML += `
       <tr>
-        <td>${item.tarih}</td>
-        <td>${item.saat}</td>
-        <td>${item.personel}</td>
-        <td>${item.tur}</td>
+        <td>${item.tarih || ""}</td>
+        <td>${item.saat || ""}</td>
+        <td>${item.personel || ""}</td>
+        <td>${item.tur || ""}</td>
         <td>${item.not || ""}</td>
       </tr>
     `;
   });
 }
 
-// Özet
 function calculateSummary(data) {
   let giris=0, cikis=0, izin=0, not=0;
 
   data.forEach(item=>{
-    if(item.tur==="Giriş") giris++;
-    if(item.tur==="Çıkış") cikis++;
-    if(item.tur==="İzin") izin++;
-    if(item.tur==="Not") not++;
+    const tur = (item.tur || "").toLowerCase();
+
+    if(tur==="giris") giris++;
+    if(tur==="cikis") cikis++;
+    if(tur==="izin") izin++;
+    if(tur==="not") not++;
   });
 
   document.getElementById("sumIn").innerText = giris;
@@ -167,7 +164,6 @@ function calculateSummary(data) {
   document.getElementById("sumNote").innerText = not;
 }
 
-// Filtre butonu
 document.getElementById("btnFilter").addEventListener("click", async ()=>{
   const start = document.getElementById("dtStart").value;
   const end = document.getElementById("dtEnd").value;
@@ -175,7 +171,6 @@ document.getElementById("btnFilter").addEventListener("click", async ()=>{
   await loadData(start,end);
 });
 
-// Temizle
 document.getElementById("btnClear").addEventListener("click", async ()=>{
   const today = getToday();
   document.getElementById("dtStart").value = today;
