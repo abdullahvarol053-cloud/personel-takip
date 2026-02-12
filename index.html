@@ -698,7 +698,7 @@ $("btnPersonelEkle").onclick = async ()=>{
   if(!supa){ toast("Hata","Supabase hazır değil."); return; }
 
   try{
-    const row = { id: uuidv4() };
+    const row = {};
     row[COL_P_AD] = ad;
     row[COL_P_AKT] = true;
 
