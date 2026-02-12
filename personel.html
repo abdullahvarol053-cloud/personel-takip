@@ -12,6 +12,9 @@ input, select, button { padding:8px; border-radius:8px; border:1px solid #ccc; }
 button { cursor:pointer; }
 .primary { background:#16a34a; color:white; border:none; }
 .danger { background:#dc2626; color:white; border:none; }
+table { width:100%; border-collapse:collapse; }
+th,td { padding:8px; border-bottom:1px solid #eee; font-size:14px; }
+th { background:#f9fafb; }
 </style>
 </head>
 <body>
@@ -25,10 +28,12 @@ button { cursor:pointer; }
 <button class="primary" onclick="login()">Giriş Yap</button>
 </div>
 
-<div id="panelBox" class="card" style="display:none;">
+<div id="panelBox" style="display:none;">
+
+<div class="card">
 <h3>Hareket Ekle</h3>
 
-<p><b>Aktif Kullanıcı:</b> <span id="aktifKullanici"></span></p>
+<p><b>Kullanıcı:</b> <span id="aktifKullanici"></span></p>
 
 <select id="tur">
 <option value="giris">Giriş</option>
@@ -45,6 +50,37 @@ button { cursor:pointer; }
 <p id="mesaj"></p>
 </div>
 
+<div class="card">
+<h3>Kayıtlarım</h3>
+
+Başlangıç:
+<input type="date" id="dtStart">
+Bitiş:
+<input type="date" id="dtEnd">
+<button onclick="loadData()">Filtrele</button>
+
+<br><br>
+<input type="text" id="txtSearch" placeholder="🔎 Ara..." style="width:100%;">
+
+<table style="margin-top:10px;">
+<thead>
+<tr>
+<th>Tarih</th>
+<th>Saat</th>
+<th>Tür</th>
+<th>Not</th>
+<th>Düzelt</th>
+</tr>
+</thead>
+<tbody id="dataTable">
+<tr><td colspan="5">Yükleniyor...</td></tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
 <script>
 
 const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
@@ -53,59 +89,66 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Oturum kontrol
+let aktif = null;
+let currentData = [];
+
 window.onload = function(){
-
-  const aktif = localStorage.getItem("aktifKullanici");
-
-  if(aktif){
+  const saved = localStorage.getItem("aktifKullanici");
+  if(saved){
+    aktif = saved;
     aktifKullanici.innerText = aktif;
     loginBox.style.display="none";
     panelBox.style.display="block";
+    setDefaultDates();
+    loadData();
   }
 };
+
+function setDefaultDates(){
+  const today = new Date();
+  const past = new Date();
+  past.setDate(today.getDate()-3);
+
+  dtStart.value = past.toISOString().split("T")[0];
+  dtEnd.value = today.toISOString().split("T")[0];
+}
 
 async function login(){
 
   const kullanici = username.value.trim();
   const sifre = password.value.trim();
 
-  if(!kullanici || !sifre){
-    alert("Bilgileri doldur");
-    return;
-  }
-
-  const { data, error } = await supabaseClient
+  const { data } = await supabaseClient
     .from("personeller")
     .select("*")
     .eq("ad_soyad", kullanici)
     .eq("sifre", sifre)
     .single();
 
-  if(error || !data){
+  if(!data){
     alert("Hatalı giriş");
     return;
   }
 
+  aktif = kullanici;
   localStorage.setItem("aktifKullanici", kullanici);
 
-  aktifKullanici.innerText = kullanici;
+  aktifKullanici.innerText = aktif;
   loginBox.style.display="none";
   panelBox.style.display="block";
+
+  setDefaultDates();
+  loadData();
 }
 
 async function kaydet(){
-
-  const aktif = localStorage.getItem("aktifKullanici");
-  const turSec = tur.value;
-  const notDeger = notText.value.trim();
 
   const { error } = await supabaseClient
     .from("hareketler")
     .insert([{
       personel_id: aktif,
-      tur: turSec,
-      not_text: notDeger
+      tur: tur.value,
+      not_text: notText.value.trim()
     }]);
 
   if(error){
@@ -117,7 +160,76 @@ async function kaydet(){
   mesaj.innerText="Kaydedildi ✔";
   mesaj.style.color="green";
   notText.value="";
+  loadData();
 }
+
+async function loadData(){
+
+  const start = dtStart.value + "T00:00:00";
+  const end = dtEnd.value + "T23:59:59";
+
+  const { data } = await supabaseClient
+    .from("hareketler")
+    .select("*")
+    .eq("personel_id", aktif)
+    .gte("created_at", start)
+    .lte("created_at", end)
+    .order("created_at",{ascending:false})
+    .limit(100);
+
+  currentData = data || [];
+  renderTable(currentData);
+}
+
+function renderTable(data){
+
+  dataTable.innerHTML="";
+
+  if(!data.length){
+    dataTable.innerHTML=`<tr><td colspan="5">Kayıt yok</td></tr>`;
+    return;
+  }
+
+  data.forEach(item=>{
+    const d = new Date(item.created_at);
+    const tarih = d.toISOString().split("T")[0];
+    const saat = d.toTimeString().split(" ")[0];
+
+    dataTable.innerHTML += `
+    <tr>
+      <td>${tarih}</td>
+      <td>${saat}</td>
+      <td>${item.tur}</td>
+      <td>${item.not_text || ""}</td>
+      <td><button onclick="duzelt('${item.id}','${item.not_text || ""}')">✏️</button></td>
+    </tr>`;
+  });
+}
+
+async function duzelt(id, eskiNot){
+
+  const yeni = prompt("Notu düzenle:", eskiNot);
+  if(yeni===null) return;
+
+  await supabaseClient
+    .from("hareketler")
+    .update({ not_text: yeni })
+    .eq("id", id);
+
+  loadData();
+}
+
+txtSearch.oninput = function(){
+
+  const q = this.value.toLowerCase();
+
+  const filtered = currentData.filter(x =>
+    (x.tur || "").toLowerCase().includes(q) ||
+    (x.not_text || "").toLowerCase().includes(q)
+  );
+
+  renderTable(filtered);
+};
 
 function cikis(){
   localStorage.removeItem("aktifKullanici");
