@@ -12,7 +12,6 @@ body { font-family: Arial, sans-serif; background:#f3f4f6; margin:0; padding:20p
 .card { background:#fff; padding:16px; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.05); margin-bottom:14px; }
 input, button { border-radius:12px; padding:10px; border:1px solid #d1d5db; }
 button.primary { background:#2563eb; color:#fff; border:none; cursor:pointer; }
-button.danger { background:#dc2626; color:#fff; border:none; cursor:pointer; }
 #summaryBox { background:#fafafa; border:1px dashed #d1d5db; padding:10px; border-radius:12px; margin-top:10px; }
 table { width:100%; border-collapse:collapse; margin-top:10px; }
 th, td { border-bottom:1px solid #e5e7eb; padding:8px; font-size:14px; }
@@ -37,16 +36,12 @@ th { background:#f9fafb; text-align:left; }
     <input type="date" id="dtEnd">
   </div>
 
-  <button class="primary" id="btnFilter">Filtrele</button>
-  <button id="btnClear">Temizle</button>
+  <button class="primary" onclick="manuelFiltre()">Filtrele</button>
+  <button onclick="buguneDon()">Temizle</button>
 
   <div id="filterInfo" style="margin-left:auto; font-size:12px;">
     Filtre: Bugün
   </div>
-</div>
-
-<div style="margin-top:12px;">
-  <input type="text" id="txtSearch" placeholder="🔎 Personel / Tür / Not / Tarih / Saat ara..." style="width:100%;">
 </div>
 
 <div id="summaryBox">
@@ -87,18 +82,17 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 let allData = [];
 
 function getToday() {
-  const d = new Date();
-  return d.toISOString().split("T")[0];
+  return new Date().toISOString().split("T")[0];
 }
 
-window.addEventListener("load", async () => {
+window.onload = async function(){
   const today = getToday();
   document.getElementById("dtStart").value = today;
   document.getElementById("dtEnd").value = today;
   await loadData(today, today);
-});
+};
 
-async function loadData(start, end) {
+async function loadData(start, end){
 
   const { data, error } = await supabaseClient
     .from("hareketler_admin")
@@ -108,50 +102,47 @@ async function loadData(start, end) {
     .order("tarih", { ascending:false })
     .order("saat", { ascending:false });
 
-  if (error) {
-    console.error(error);
+  if(error){
     document.getElementById("dataTable").innerHTML =
       `<tr><td colspan="5" style="text-align:center;color:red;">Veri çekme hatası</td></tr>`;
     return;
   }
 
   allData = data || [];
-  renderTable(allData);
-  calculateSummary(allData);
-
+  renderTable();
+  calculateSummary();
   document.getElementById("filterInfo").innerText =
     `Filtre: ${start} - ${end}`;
 }
 
-function renderTable(data) {
+function renderTable(){
   const tbody = document.getElementById("dataTable");
   tbody.innerHTML = "";
 
-  if (data.length === 0) {
+  if(allData.length === 0){
     tbody.innerHTML =
       `<tr><td colspan="5" style="text-align:center;">Veri yok</td></tr>`;
     return;
   }
 
-  data.forEach(item => {
+  allData.forEach(item=>{
     tbody.innerHTML += `
       <tr>
-        <td>${item.tarih || ""}</td>
-        <td>${item.saat || ""}</td>
-        <td>${item.personel || ""}</td>
-        <td>${item.tur || ""}</td>
+        <td>${item.tarih}</td>
+        <td>${item.saat}</td>
+        <td>${item.personel}</td>
+        <td>${item.tur}</td>
         <td>${item.not || ""}</td>
       </tr>
     `;
   });
 }
 
-function calculateSummary(data) {
+function calculateSummary(){
   let giris=0, cikis=0, izin=0, not=0;
 
-  data.forEach(item=>{
+  allData.forEach(item=>{
     const tur = (item.tur || "").toLowerCase();
-
     if(tur==="giris") giris++;
     if(tur==="cikis") cikis++;
     if(tur==="izin") izin++;
@@ -164,19 +155,22 @@ function calculateSummary(data) {
   document.getElementById("sumNote").innerText = not;
 }
 
-document.getElementById("btnFilter").addEventListener("click", async ()=>{
+async function manuelFiltre(){
   const start = document.getElementById("dtStart").value;
   const end = document.getElementById("dtEnd").value;
-  if(!start || !end) return alert("Tarih seç");
+  if(!start || !end){
+    alert("Tarih seç");
+    return;
+  }
   await loadData(start,end);
-});
+}
 
-document.getElementById("btnClear").addEventListener("click", async ()=>{
+async function buguneDon(){
   const today = getToday();
   document.getElementById("dtStart").value = today;
   document.getElementById("dtEnd").value = today;
   await loadData(today,today);
-});
+}
 
 </script>
 
