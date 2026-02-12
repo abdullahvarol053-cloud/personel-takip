@@ -621,7 +621,7 @@ async function adminRefresh(){
 
   try{
     const [pRes, hRes] = await Promise.all([
-      supa.from(T_PERSONELLER).select("id,"+COL_P_AD+","+COL_P_AKT+",created_at").order(COL_P_AD,{ascending:true}).limit(5000),
+      supa.from(T_PERSONELLER).select("*").order(COL_P_AD,{ascending:true}).limit(5000),
       supa.from(T_HAREKETLER).select("id,"+COL_H_PER+","+COL_H_NOT+",created_at").order("created_at",{ascending:false}).limit(5000),
     ]);
 
