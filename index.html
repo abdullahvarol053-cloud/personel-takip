@@ -766,7 +766,6 @@ $("fileRestore").addEventListener("change", async (ev)=>{
     for(const p of personeller){
       const row = { id: p.id || uuidv4() };
       row[COL_P_AD] = p[COL_P_AD] ?? p.ad ?? "";
-      row[COL_P_AKT]= (p[COL_P_AKT]===undefined ? true : !!p[COL_P_AKT]);
       const r = await tryInsertSkip(T_PERSONELLER, row);
       if(r==="inserted") inserted++; else if(r==="skipped") skipped++; else failed++;
     }
