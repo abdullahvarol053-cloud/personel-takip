@@ -3,15 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TEST</title>
+<title>Personel Takip - Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body { font-family: Arial; background:#f3f4f6; padding:20px; }
+.card { background:#fff; padding:16px; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.05); margin-bottom:14px; }
+input, button { padding:8px; border-radius:10px; border:1px solid #ccc; }
+button { cursor:pointer; }
+.primary { background:#2563eb; color:white; border:none; }
+table { width:100%; border-collapse:collapse; }
+th,td { padding:8px; border-bottom:1px solid #eee; }
+th { background:#f9fafb; }
+</style>
 </head>
 <body>
 
-<h2>Veri Test</h2>
-<button onclick="hepsiniGetir()">Hepsini Getir</button>
+<h2>📊 Personel Takip - Admin</h2>
 
-<pre id="sonuc"></pre>
+<div class="card">
+Başlangıç <input type="date" id="dtStart">
+Bitiş <input type="date" id="dtEnd">
+<button class="primary" id="btnFilter">Filtrele</button>
+</div>
+
+<div class="card">
+<table>
+<thead>
+<tr>
+<th>Tarih</th>
+<th>Saat</th>
+<th>Personel</th>
+<th>Tür</th>
+<th>Not</th>
+</tr>
+</thead>
+<tbody id="dataTable">
+<tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>
+</tbody>
+</table>
+</div>
 
 <script>
 
@@ -21,22 +51,67 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function hepsiniGetir(){
+function getToday(){
+  const d = new Date();
+  return d.toISOString().split("T")[0];
+}
+
+window.addEventListener("load", async ()=>{
+  const today = getToday();
+  dtStart.value = today;
+  dtEnd.value = today;
+  await loadData(today,today);
+});
+
+async function loadData(start,end){
 
   const { data, error } = await supabaseClient
-    .from("hareketler_admin")
-    .select("*");
+    .from("hareketler")
+    .select("*")
+    .gte("created_at", start+"T00:00:00")
+    .lte("created_at", end+"T23:59:59")
+    .order("created_at",{ascending:false});
 
   if(error){
-    document.getElementById("sonuc").innerText = "HATA:\n" + JSON.stringify(error,null,2);
+    dataTable.innerHTML =
+    `<tr><td colspan="5" style="color:red;text-align:center;">Hata</td></tr>`;
+    console.log(error);
     return;
   }
 
-  document.getElementById("sonuc").innerText =
-    JSON.stringify(data,null,2);
+  if(!data || data.length===0){
+    dataTable.innerHTML =
+    `<tr><td colspan="5" style="text-align:center;">Veri yok</td></tr>`;
+    return;
+  }
+
+  dataTable.innerHTML = "";
+
+  data.forEach(item=>{
+    const dateObj = new Date(item.created_at);
+    const tarih = dateObj.toISOString().split("T")[0];
+    const saat = dateObj.toTimeString().split(" ")[0];
+
+    dataTable.innerHTML += `
+    <tr>
+      <td>${tarih}</td>
+      <td>${saat}</td>
+      <td>${item.personel_id}</td>
+      <td>${item.tur}</td>
+      <td>${item.not_text || ""}</td>
+    </tr>
+    `;
+  });
+
 }
 
-</script>
+btnFilter.addEventListener("click", async ()=>{
+  const start = dtStart.value;
+  const end = dtEnd.value;
+  if(!start || !end) return alert("Tarih seç");
+  await loadData(start,end);
+});
 
+</script>
 </body>
 </html>
