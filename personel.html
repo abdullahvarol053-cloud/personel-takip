@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personel Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body { font-family: Arial; background:#f3f4f6; padding:20px; }
+.card { background:#fff; padding:16px; border-radius:14px; margin-bottom:14px; }
+input, select, button { padding:8px; border-radius:8px; border:1px solid #ccc; }
+button { cursor:pointer; }
+.primary { background:#16a34a; color:white; border:none; }
+.danger { background:#dc2626; color:white; border:none; }
+</style>
+</head>
+<body>
+
+<h2>👷 Personel Panel</h2>
+
+<div id="loginBox" class="card">
+<h3>Giriş</h3>
+<input type="text" id="username" placeholder="Ad Soyad"><br><br>
+<input type="password" id="password" placeholder="Şifre"><br><br>
+<button class="primary" onclick="login()">Giriş Yap</button>
+</div>
+
+<div id="panelBox" class="card" style="display:none;">
+<h3>Hareket Ekle</h3>
+
+<p><b>Aktif Kullanıcı:</b> <span id="aktifKullanici"></span></p>
+
+<select id="tur">
+<option value="giris">Giriş</option>
+<option value="cikis">Çıkış</option>
+<option value="izin">İzin</option>
+<option value="not">Not</option>
+</select><br><br>
+
+<input type="text" id="notText" placeholder="Not (isteğe bağlı)"><br><br>
+
+<button class="primary" onclick="kaydet()">Kaydet</button>
+<button class="danger" onclick="cikis()">Çıkış</button>
+
+<p id="mesaj"></p>
+</div>
+
+<script>
+
+const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
+
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Oturum kontrol
+window.onload = function(){
+
+  const aktif = localStorage.getItem("aktifKullanici");
+
+  if(aktif){
+    aktifKullanici.innerText = aktif;
+    loginBox.style.display="none";
+    panelBox.style.display="block";
+  }
+};
+
+async function login(){
+
+  const kullanici = username.value.trim();
+  const sifre = password.value.trim();
+
+  if(!kullanici || !sifre){
+    alert("Bilgileri doldur");
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("personeller")
+    .select("*")
+    .eq("ad_soyad", kullanici)
+    .eq("sifre", sifre)
+    .single();
+
+  if(error || !data){
+    alert("Hatalı giriş");
+    return;
+  }
+
+  localStorage.setItem("aktifKullanici", kullanici);
+
+  aktifKullanici.innerText = kullanici;
+  loginBox.style.display="none";
+  panelBox.style.display="block";
+}
+
+async function kaydet(){
+
+  const aktif = localStorage.getItem("aktifKullanici");
+  const turSec = tur.value;
+  const notDeger = notText.value.trim();
+
+  const { error } = await supabaseClient
+    .from("hareketler")
+    .insert([{
+      personel_id: aktif,
+      tur: turSec,
+      not_text: notDeger
+    }]);
+
+  if(error){
+    mesaj.innerText="Hata oluştu";
+    mesaj.style.color="red";
+    return;
+  }
+
+  mesaj.innerText="Kaydedildi ✔";
+  mesaj.style.color="green";
+  notText.value="";
+}
+
+function cikis(){
+  localStorage.removeItem("aktifKullanici");
+  location.reload();
+}
+
+</script>
+</body>
+</html>
