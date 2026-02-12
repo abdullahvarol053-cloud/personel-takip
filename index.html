@@ -439,7 +439,7 @@ $("btnPing").onclick = async ()=>{
     return;
   }
   try{
-    const { error } = await supa.from(T_PERSONELLER).select("id").limit(1);
+    const { error } = await supa.from(T_PERSONELLER).select(COL_P_AD).limit(1);
     if(error){
       setStatus("⚠️ Supabase erişti ama tablo/izin sorunu var: <br><b>"+escapeHtml(error.message)+"</b>", "warn");
       toast("Uyarı", error.message);
