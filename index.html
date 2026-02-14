@@ -3,119 +3,190 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Personel Takip (FINAL Temizleme)</title>
+  <title>Personel Takip (FINAL Temizleme - Beyaz)</title>
 
   <!-- ✅ Tek dosya / Not defteri gibi -->
-  <!-- ✅ 5000 limit (listeleme + export için) -->
+  <!-- ✅ 5000 limit (listeleme + export) -->
   <!-- ✅ Arama: personel + not -->
-  <!-- ✅ Tarih filtresi net (başlangıç-bitiş) -->
-  <!-- ✅ Gereksiz kod temiz -->
-  <!-- ✅ Admin sade: PIN ile giriş (ekranda PIN yazmaz) -->
+  <!-- ✅ Tarih filtresi net (başlangıç-bitiş, gün sonu dahil) -->
+  <!-- ✅ Koyu tema yok: Beyaz tema -->
+  <!-- ✅ DB kolon uyumu: tip yerine tur -->
 
   <style>
     :root{
-      --bg:#0b1220; --card:#0f1b33; --card2:#0d1730; --txt:#eaf0ff; --muted:#9fb2d6;
-      --line:rgba(255,255,255,.10); --btn:#1f5eff; --btn2:#1c2740; --danger:#ff3b3b;
-      --ok:#19c37d; --warn:#ffcc00;
+      --bg:#f6f8fc;
+      --card:#ffffff;
+      --card2:#fbfcff;
+      --txt:#0f172a;
+      --muted:#64748b;
+      --line:rgba(15,23,42,.10);
+      --btn:#2563eb;
+      --btn2:#eef2ff;
+      --danger:#ef4444;
+      --ok:#16a34a;
+      --warn:#f59e0b;
       --radius:14px;
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
     }
+
     *{box-sizing:border-box}
     body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--txt);
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:var(--bg);
+      color:var(--txt);
     }
+
     header{
-      position:sticky; top:0; z-index:10;
-      background:linear-gradient(to bottom, rgba(11,18,32,.98), rgba(11,18,32,.70));
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:rgba(255,255,255,.85);
       border-bottom:1px solid var(--line);
       backdrop-filter: blur(10px);
     }
+
     .wrap{max-width:1100px; margin:0 auto; padding:14px 14px}
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .spacer{flex:1}
     h1{margin:0; font-size:16px; letter-spacing:.2px}
+
     .pill{
-      padding:6px 10px; border:1px solid var(--line); border-radius:999px; color:var(--muted);
-      font-size:12px; background:rgba(255,255,255,.03)
+      padding:6px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      font-size:12px;
+      background:rgba(15,23,42,.02);
     }
+
     .grid{
-      display:grid; grid-template-columns: 1.2fr .8fr;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
       gap:12px;
     }
     @media (max-width: 980px){
       .grid{grid-template-columns: 1fr}
     }
+
     .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      background:linear-gradient(180deg, var(--card), var(--card2));
       border:1px solid var(--line);
       border-radius:var(--radius);
       padding:12px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.25);
+      box-shadow: var(--shadow);
     }
+
     .card h2{margin:0 0 10px; font-size:14px}
     .muted{color:var(--muted); font-size:12px}
+
     label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+
     input, select, textarea{
-      width:100%; padding:10px 10px; border-radius:12px;
-      border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); color:var(--txt);
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      background:#fff;
+      color:var(--txt);
       outline:none;
     }
-    textarea{min-height:88px; resize:vertical}
-    .btn{
-      appearance:none; border:0; cursor:pointer;
-      padding:10px 12px; border-radius:12px; color:white; background:var(--btn);
-      font-weight:600; font-size:13px;
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(37,99,235,.55);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
     }
-    .btn.secondary{background:var(--btn2); border:1px solid var(--line); color:var(--txt)}
+
+    textarea{min-height:88px; resize:vertical}
+
+    .btn{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      padding:10px 12px;
+      border-radius:12px;
+      color:white;
+      background:var(--btn);
+      font-weight:700;
+      font-size:13px;
+    }
+    .btn.secondary{
+      background:var(--btn2);
+      border:1px solid rgba(37,99,235,.20);
+      color:#1e40af;
+    }
     .btn.danger{background:var(--danger)}
     .btn.ok{background:var(--ok)}
     .btn:disabled{opacity:.55; cursor:not-allowed}
+
     .mini{font-size:12px; padding:8px 10px; border-radius:10px}
     .hr{height:1px; background:var(--line); margin:10px 0}
+
     .table{
       width:100%;
       border-collapse: collapse;
       overflow:hidden;
       border-radius:12px;
       border:1px solid var(--line);
+      background:#fff;
     }
     .table th, .table td{
       padding:10px 10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
+      border-bottom:1px solid rgba(15,23,42,.08);
       font-size:12px;
       vertical-align:top;
     }
-    .table th{color:#cfe0ff; text-align:left; font-weight:700; background:rgba(255,255,255,.04)}
-    .table tr:hover td{background:rgba(255,255,255,.03)}
+    .table th{
+      color:#0f172a;
+      text-align:left;
+      font-weight:800;
+      background:rgba(15,23,42,.03)
+    }
+    .table tr:hover td{background:rgba(37,99,235,.04)}
     .right{text-align:right}
+
     .tag{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:5px 10px; border-radius:999px; border:1px solid var(--line);
-      font-size:12px; color:var(--muted);
-      background:rgba(255,255,255,.03)
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(15,23,42,.02)
     }
     .dot{width:8px; height:8px; border-radius:50%}
     .dot.ok{background:var(--ok)}
     .dot.warn{background:var(--warn)}
     .dot.err{background:var(--danger)}
+
     .toast{
-      position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
-      background:rgba(20,30,55,.95);
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:#ffffff;
       border:1px solid var(--line);
       padding:10px 12px;
       border-radius:14px;
-      box-shadow:0 18px 60px rgba(0,0,0,.45);
+      box-shadow: 0 18px 60px rgba(15,23,42,.15);
       display:none;
       max-width:min(92vw, 780px);
       z-index:99;
     }
     .toast.show{display:block}
     .toast b{font-size:13px}
-    .toast .muted{margin-top:4px}
+
     .kbd{
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size:11px; padding:2px 6px; border-radius:8px; border:1px solid var(--line); background:rgba(0,0,0,.25);
-      color:#d7e6ff;
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid var(--line);
+      background:rgba(15,23,42,.02);
+      color:#0f172a;
     }
+
     .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
     @media (max-width:700px){ .two{grid-template-columns:1fr} }
     .hide{display:none !important}
@@ -124,7 +195,7 @@
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- XLSX (opsiyonel export) -->
+  <!-- XLSX Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
@@ -140,8 +211,12 @@
       <button class="btn secondary mini" id="btnSync">Sunucudan Senkronize Et</button>
       <button class="btn secondary mini" id="btnAdmin">Admin</button>
     </div>
+
     <div class="row" style="margin-top:8px">
-      <span class="muted">Arama: <span class="kbd">personel</span> + <span class="kbd">not</span> | Tarih: <span class="kbd">başlangıç</span>–<span class="kbd">bitiş</span> (gün sonu dahil)</span>
+      <span class="muted">
+        Arama: <span class="kbd">personel</span> + <span class="kbd">not</span> |
+        Tarih: <span class="kbd">başlangıç</span>–<span class="kbd">bitiş</span> (gün sonu dahil)
+      </span>
       <div class="spacer"></div>
       <span class="muted">Cihaz değiştiyse: Admin → “Geri Yükle” kullanın.</span>
     </div>
@@ -151,7 +226,7 @@
 <main class="wrap">
   <div class="grid">
 
-    <!-- SOL: Kayıt Girişi -->
+    <!-- SOL: Kayıt -->
     <section class="card">
       <h2>Yeni Hareket</h2>
 
@@ -178,8 +253,9 @@
           </select>
         </div>
         <div>
-          <label>Kısa Etiket (opsiyonel)</label>
+          <label>Etiket (opsiyonel)</label>
           <input id="inpEtiket" placeholder="örn: Servis / Geç / İzin" />
+          <div class="muted" style="margin-top:6px">Etiket DB’de ayrı kolon istemez, not içine eklenir.</div>
         </div>
       </div>
 
@@ -285,10 +361,10 @@
       <button class="btn" id="btnAdminLogin">Giriş</button>
       <span class="muted">Yanlış deneme: <b id="pinTry">0</b></span>
       <div class="spacer"></div>
-      <span class="muted">İpucu: PIN’i kod içine yazma; localStorage’dan ayarla.</span>
+      <span class="muted">İlk kurulum localStorage</span>
     </div>
     <div class="muted" style="margin-top:8px">
-      İlk kurulum: Tarayıcı konsolunda <span class="kbd">localStorage.setItem('ADMIN_PIN','070707')</span> gibi ayarla.
+      Konsolda 1 kere: <span class="kbd">localStorage.setItem('ADMIN_PIN','070707')</span>
     </div>
   </div>
 
@@ -313,7 +389,7 @@
     </div>
     <div class="row" style="margin-top:10px">
       <button class="btn danger mini" id="btnDelPersonel">Seçili personeli sil</button>
-      <span class="muted">Dikkat: Silme, hareketleri etkilemez (FK varsa engellenir).</span>
+      <span class="muted">FK varsa Supabase engeller.</span>
     </div>
 
     <div class="hr"></div>
@@ -334,7 +410,7 @@
     <h3 style="margin:0 0 8px; font-size:13px">Temizlik</h3>
     <div class="row">
       <button class="btn danger mini" id="btnDeleteRow">Seçili satırı sil</button>
-      <span class="muted">Listeden satırın “Sil” butonuyla da yaparsın.</span>
+      <span class="muted">Listeden “Sil” de olur.</span>
     </div>
   </div>
 </div>
@@ -351,51 +427,60 @@
 ========================= */
 const LIMIT = 5000;              // ✅ 5000 limit işi
 const PAGE_SIZE = 100;           // liste sayfa boyu
-const STORAGE = {
-  ADMIN_PIN: 'ADMIN_PIN',
-  ADMIN_OK: 'ADMIN_OK',
-  LAST_FILTERS: 'LAST_FILTERS',
-  CACHE_PERSONEL: 'CACHE_PERSONEL',
-  CACHE_UPDATED: 'CACHE_UPDATED',
-  CACHE_ROWS: 'CACHE_ROWS'
-};
 
 // ✅ Supabase Config (BURAYI DOLDUR)
 const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
 
-// ✅ Tablo adları (Supabase)
+// ✅ Tablo adları
 const TBL_PERSONEL = "personeller";
-const TBL_HAREKET = "hareketler";
+const TBL_HAREKET  = "hareketler";
+
+// ✅ KOLON AYARLARI (senin DB farklıysa burada düzelt)
+// EKRANDAKİ HATA: "hareketler.tip yok" -> biz "tur" yaptık
+const COL_ID      = "id";
+const COL_PID     = "personel_id";
+const COL_TYPE    = "tur";     // eskiden tip
+const COL_NOTE    = "not";
+const COL_DATE    = "tarih";
 
 /* =========================
    🧠 STATE
 ========================= */
 let supa = null;
 let personelList = [];
-let rows = [];                // mevcut filtreli data
+let rows = [];
 let page = 1;
 let selectedRowId = null;
-
 let pinTry = 0;
 
+const STORAGE = {
+  ADMIN_PIN: 'ADMIN_PIN',
+  ADMIN_OK: 'ADMIN_OK',
+  LAST_FILTERS: 'LAST_FILTERS',
+  CACHE_PERSONEL: 'CACHE_PERSONEL'
+};
+
 /* =========================
-   🧩 UI Helpers
+   🧩 Helpers
 ========================= */
 const $ = (id) => document.getElementById(id);
+
 function toast(title, msg){
   $('toastTitle').textContent = title || 'Bilgi';
   $('toastMsg').textContent = msg || '';
   $('toast').classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(()=> $('toast').classList.remove('show'), 2200);
+  toast._t = setTimeout(()=> $('toast').classList.remove('show'), 2300);
 }
+
 function setStatus(text, ok=true){
   $('statusPill').textContent = `Durum: ${text}`;
   $('liveTag').innerHTML = ok
     ? `<span class="dot ok"></span>Bağlı`
     : `<span class="dot warn"></span>${text}`;
 }
+
 function fmtDT(iso){
   try{
     const d = new Date(iso);
@@ -403,22 +488,21 @@ function fmtDT(iso){
     return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }catch{ return iso || ''; }
 }
+
 function escapeHtml(s){
   return (s ?? '').toString()
     .replaceAll('&','&amp;').replaceAll('<','&lt;')
     .replaceAll('>','&gt;').replaceAll('"','&quot;')
     .replaceAll("'","&#039;");
 }
+
 function startOfDayISO(dateStr){
-  // dateStr: YYYY-MM-DD
   if(!dateStr) return null;
   return new Date(dateStr + "T00:00:00").toISOString();
 }
 function endOfDayISO(dateStr){
-  // Gün sonu dahil etmek için 23:59:59.999
   if(!dateStr) return null;
-  const d = new Date(dateStr + "T23:59:59.999");
-  return d.toISOString();
+  return new Date(dateStr + "T23:59:59.999").toISOString();
 }
 
 /* =========================
@@ -427,12 +511,10 @@ function endOfDayISO(dateStr){
 init();
 
 async function init(){
-  // Supabase başlat
   try{
     if(SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON.includes("YOUR_")){
       setStatus("Supabase ayarı yok", false);
       toast("Ayar", "SUPABASE_URL ve SUPABASE_ANON doldur.");
-      // Yine de UI çalışsın
     }else{
       supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
       setStatus("Bağlantı hazır", true);
@@ -444,9 +526,8 @@ async function init(){
 
   wireEvents();
   loadFiltersFromStorage();
-
-  await loadPersonel();   // personel dropdown
-  await applyFilters();   // ilk liste
+  await loadPersonel();
+  await applyFilters();
 }
 
 function wireEvents(){
@@ -487,15 +568,12 @@ function wireEvents(){
     deleteRow(selectedRowId);
   });
 
-  // Satır seçimi için: tabloda tıklanınca seç
   $('tbody').addEventListener('click', (e)=>{
     const tr = e.target.closest('tr');
     if(!tr) return;
-    const id = tr.getAttribute('data-id');
-    selectedRowId = id || null;
+    selectedRowId = tr.getAttribute('data-id') || null;
   });
 
-  // Enter ile arama uygulansın
   $('inpAra').addEventListener('keydown', async (e)=>{
     if(e.key === 'Enter'){ page=1; await applyFilters(); }
   });
@@ -535,7 +613,6 @@ function resetFilters(){
    👥 PERSONEL
 ========================= */
 async function loadPersonel(force=false){
-  // cache
   const cacheOk = !force && localStorage.getItem(STORAGE.CACHE_PERSONEL);
   if(cacheOk){
     try{
@@ -562,9 +639,7 @@ async function loadPersonel(force=false){
   }else{
     personelList = data || [];
     localStorage.setItem(STORAGE.CACHE_PERSONEL, JSON.stringify(personelList));
-    localStorage.setItem(STORAGE.CACHE_UPDATED, new Date().toISOString());
   }
-
   fillPersonelSelects();
 }
 
@@ -582,7 +657,6 @@ function fillPersonelSelects(){
   $('selPersonel').innerHTML = makeOpts(false);
   $('selFilterPersonel').innerHTML = makeOpts(true);
 
-  // Filtrede kayıtlı seçim varsa koru
   try{
     const f = JSON.parse(localStorage.getItem(STORAGE.LAST_FILTERS) || '{}');
     if(f.p) $('selFilterPersonel').value = f.p;
@@ -590,7 +664,7 @@ function fillPersonelSelects(){
 }
 
 /* =========================
-   ✍️ HAREKET KAYIT
+   ✍️ KAYIT
 ========================= */
 function clearForm(){
   $('inpDT').value = '';
@@ -601,35 +675,25 @@ function clearForm(){
 
 async function saveHareket(){
   const personel_id = $('selPersonel').value;
-  if(!personel_id){
-    return toast("Eksik", "Personel seç.");
-  }
+  if(!personel_id) return toast("Eksik", "Personel seç.");
 
-  const tip = $('selTip').value;
+  const tur = $('selTip').value;
   const etiket = $('inpEtiket').value.trim();
-  const not = $('inpNot').value.trim();
+  const notRaw = $('inpNot').value.trim();
+
+  // ✅ Etiket ayrı kolon değil -> not içine göm
+  const not = (etiket ? `#${etiket} ` : '') + (notRaw || '');
 
   let dt = $('inpDT').value;
-  let tarihIso = null;
-  if(dt){
-    // datetime-local -> ISO
-    const d = new Date(dt);
-    tarihIso = d.toISOString();
-  }else{
-    tarihIso = new Date().toISOString();
-  }
+  const tarihIso = dt ? new Date(dt).toISOString() : new Date().toISOString();
 
-  if(!supa){
-    toast("Supabase", "Bağlantı yok. Ayarları doldur.");
-    return;
-  }
+  if(!supa) return toast("Supabase", "Bağlantı yok. Ayarları doldur.");
 
   const payload = {
-    personel_id,
-    tip,
-    etiket: etiket || null,
-    not: not || null,
-    tarih: tarihIso
+    [COL_PID]: personel_id,
+    [COL_TYPE]: tur,
+    [COL_NOTE]: not || null,
+    [COL_DATE]: tarihIso
   };
 
   $('btnKaydet').disabled = true;
@@ -641,13 +705,14 @@ async function saveHareket(){
     await applyFilters(true);
   }catch(e){
     toast("Hata", e.message);
+    setStatus("Kayıt hatası", false);
   }finally{
     $('btnKaydet').disabled = false;
   }
 }
 
 /* =========================
-   🔎 LISTE / APPLY FILTERS
+   🔎 LISTE
 ========================= */
 async function applyFilters(force=false){
   saveFiltersToStorage();
@@ -664,33 +729,27 @@ async function applyFilters(force=false){
     return;
   }
 
-  // 🔥 Sunucudan sadece gerekli kolonlar
-  // Personel adını join gibi almak için iki adım: hareketleri çek + personel map
-  // (Supabase foreign table select de olur ama en sade ve sağlam yöntem: map)
-  // NOT: 5000 limit burada uygulanır.
+  let cols = `${COL_ID}, ${COL_PID}, ${COL_TYPE}, ${COL_NOTE}, ${COL_DATE}`;
 
   let query = supa
     .from(TBL_HAREKET)
-    .select('id, personel_id, tip, etiket, not, tarih')
-    .order('tarih', {ascending:false})
+    .select(cols)
+    .order(COL_DATE, {ascending:false})
     .limit(LIMIT);
 
-  // Tarih filtresi net:
-  // start varsa >= startOfDay
-  // end varsa <= endOfDay (gün sonu dahil)
   const startIso = startOfDayISO(start);
   const endIso = endOfDayISO(end);
 
-  if(startIso) query = query.gte('tarih', startIso);
-  if(endIso) query = query.lte('tarih', endIso);
-  if(personelFilter) query = query.eq('personel_id', personelFilter);
+  if(startIso) query = query.gte(COL_DATE, startIso);
+  if(endIso) query = query.lte(COL_DATE, endIso);
+  if(personelFilter) query = query.eq(COL_PID, personelFilter);
 
   $('btnUygula').disabled = true;
   $('btnSifirla').disabled = true;
 
   try{
-    // personelleri taze olsun
     if(force) await loadPersonel(true);
+
     const pmap = new Map(personelList.map(p => [p.id, p.ad || '']));
 
     const { data, error } = await query;
@@ -698,23 +757,18 @@ async function applyFilters(force=false){
 
     const raw = data || [];
 
-    // Arama: personel + not + etiket
     if(q){
       rows = raw.filter(r=>{
-        const ad = (pmap.get(r.personel_id) || '').toLowerCase();
-        const not = (r.not || '').toLowerCase();
-        const et = (r.etiket || '').toLowerCase();
-        const tip = (r.tip || '').toLowerCase();
-        return ad.includes(q) || not.includes(q) || et.includes(q) || tip.includes(q);
+        const ad = (pmap.get(r[COL_PID]) || '').toLowerCase();
+        const note = (r[COL_NOTE] || '').toLowerCase();
+        const type = (r[COL_TYPE] || '').toLowerCase();
+        return ad.includes(q) || note.includes(q) || type.includes(q);
       });
     }else{
       rows = raw;
     }
 
-    // Cache rows opsiyonel (trafik düşük, ama isterse hızlı açılış)
-    localStorage.setItem(STORAGE.CACHE_ROWS, JSON.stringify(rows.slice(0, Math.min(rows.length, LIMIT))));
     renderTable(pmap);
-
     setStatus("Hazır", true);
   }catch(e){
     toast("Hata", e.message);
@@ -728,6 +782,7 @@ async function applyFilters(force=false){
 function renderTable(pmapOverride){
   const pmap = pmapOverride || new Map(personelList.map(p => [p.id, p.ad || '']));
   const total = rows.length;
+
   $('countPill').textContent = `${total} kayıt`;
 
   const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -738,14 +793,15 @@ function renderTable(pmapOverride){
   const slice = rows.slice(startIdx, startIdx + PAGE_SIZE);
 
   const html = slice.map(r=>{
-    const ad = pmap.get(r.personel_id) || '—';
-    const tip = r.tip || '—';
-    const not = [r.etiket ? `#${r.etiket}` : '', r.not || ''].filter(Boolean).join(' ');
-    const id = r.id;
+    const id = r[COL_ID];
+    const ad = pmap.get(r[COL_PID]) || '—';
+    const tip = r[COL_TYPE] || '—';
+    const not = r[COL_NOTE] || '';
+    const tarih = r[COL_DATE];
 
     return `
       <tr data-id="${escapeHtml(id)}">
-        <td>${escapeHtml(fmtDT(r.tarih))}</td>
+        <td>${escapeHtml(fmtDT(tarih))}</td>
         <td>${escapeHtml(ad)}</td>
         <td>${escapeHtml(tip)}</td>
         <td>${escapeHtml(not)}</td>
@@ -760,30 +816,24 @@ function renderTable(pmapOverride){
   $('tbody').innerHTML = html || `<tr><td colspan="5" class="muted">Kayıt yok.</td></tr>`;
 }
 
-// global hooks
 window.__pickRow = (id)=>{
   selectedRowId = id;
-  toast("Seçildi", "Satır seçildi. Admin → Seçili satırı sil de kullanabilirsin.");
+  toast("Seçildi", "Satır seçildi ✅");
 };
+
 window.__deleteRow = async (id)=>{
-  // listeden sil: admin kontrolü istersen buradan şart koş
-  const ok = isAdmin();
-  if(!ok) return toast("Yetki", "Silmek için Admin girişi gerekli.");
+  if(!isAdmin()) return toast("Yetki", "Silmek için Admin girişi gerekli.");
   await deleteRow(id);
 };
 
-/* =========================
-   🗑️ DELETE
-========================= */
 async function deleteRow(id){
   if(!supa) return toast("Supabase", "Bağlantı yok.");
   if(!id) return;
 
-  const yes = confirm("Bu satır silinsin mi?");
-  if(!yes) return;
+  if(!confirm("Bu satır silinsin mi?")) return;
 
   try{
-    const { error } = await supa.from(TBL_HAREKET).delete().eq('id', id);
+    const { error } = await supa.from(TBL_HAREKET).delete().eq(COL_ID, id);
     if(error) throw error;
     toast("Sil", "Silindi ✅");
     selectedRowId = null;
@@ -794,13 +844,12 @@ async function deleteRow(id){
 }
 
 /* =========================
-   🔐 ADMIN (PIN)
+   🔐 ADMIN
 ========================= */
 function openAdmin(show){
   const m = $('adminModal');
   if(show){
     m.classList.add('show');
-    // admin durumuna göre ekran
     const ok = isAdmin();
     $('adminLocked').classList.toggle('hide', ok);
     $('adminUnlocked').classList.toggle('hide', !ok);
@@ -809,11 +858,9 @@ function openAdmin(show){
     m.classList.remove('show');
   }
 }
-
 function isAdmin(){
   return localStorage.getItem(STORAGE.ADMIN_OK) === '1';
 }
-
 function adminLogin(){
   const pin = $('adminPin').value || '';
   const real = localStorage.getItem(STORAGE.ADMIN_PIN) || '';
@@ -821,8 +868,7 @@ function adminLogin(){
   if(!real){
     pinTry++;
     $('pinTry').textContent = String(pinTry);
-    toast("Admin", "ADMIN_PIN ayarlı değil (localStorage).");
-    return;
+    return toast("Admin", "ADMIN_PIN ayarlı değil (localStorage).");
   }
 
   if(pin === real){
@@ -836,7 +882,6 @@ function adminLogin(){
     toast("Admin", "PIN yanlış.");
   }
 }
-
 function adminLogout(){
   localStorage.removeItem(STORAGE.ADMIN_OK);
   toast("Admin", "Çıkış yapıldı.");
@@ -844,13 +889,12 @@ function adminLogout(){
 }
 
 /* =========================
-   ➕ PERSONEL CRUD (ADMIN)
+   ➕ PERSONEL CRUD
 ========================= */
 async function addPersonel(){
   if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
   const ad = $('inpNewPersonel').value.trim();
   if(!ad) return toast("Eksik", "Personel adı yaz.");
-
   if(!supa) return toast("Supabase", "Bağlantı yok.");
 
   try{
@@ -869,10 +913,7 @@ async function delPersonel(){
   if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
   const id = $('selPersonel').value;
   if(!id) return toast("Eksik", "Silmek için personel seç.");
-
-  const yes = confirm("Seçili personel silinsin mi?");
-  if(!yes) return;
-
+  if(!confirm("Seçili personel silinsin mi?")) return;
   if(!supa) return toast("Supabase", "Bağlantı yok.");
 
   try{
@@ -887,7 +928,7 @@ async function delPersonel(){
 }
 
 /* =========================
-   💾 BACKUP / RESTORE (ADMIN)
+   💾 BACKUP / RESTORE
 ========================= */
 async function backupJSON(){
   if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
@@ -898,7 +939,7 @@ async function backupJSON(){
     const { data: p, error: ep } = await supa.from(TBL_PERSONEL).select('*').order('ad', {ascending:true}).limit(LIMIT);
     if(ep) throw ep;
 
-    const { data: h, error: eh } = await supa.from(TBL_HAREKET).select('*').order('tarih', {ascending:false}).limit(LIMIT);
+    const { data: h, error: eh } = await supa.from(TBL_HAREKET).select('*').order(COL_DATE, {ascending:false}).limit(LIMIT);
     if(eh) throw eh;
 
     const payload = {
@@ -923,7 +964,6 @@ async function restoreJSON(evt){
   const file = evt.target.files?.[0];
   evt.target.value = '';
   if(!file) return;
-
   if(!supa) return toast("Supabase", "Bağlantı yok.");
 
   try{
@@ -933,17 +973,12 @@ async function restoreJSON(evt){
     const p = Array.isArray(json.personeller) ? json.personeller : [];
     const h = Array.isArray(json.hareketler) ? json.hareketler : [];
 
-    // Çakışanları atla: id üzerinden upsert yerine "insert ignore" yok.
-    // En güvenlisi: tek tek dene, hata olursa say.
     let okP=0, skipP=0, okH=0, skipH=0;
 
     toast("Geri Yükle", "Yükleniyor…");
 
-    // Personel
     for(const item of p){
       if(!item || !item.ad) { skipP++; continue; }
-      // id zorlamıyoruz; yeni id alsın diye ad ile ekliyoruz, ama aynı ad varsa tekrar ekleyebilir.
-      // İstersen benzersiz ad kuralı koyarsın.
       const { error } = await supa.from(TBL_PERSONEL).insert({ ad: item.ad });
       if(error) skipP++; else okP++;
       if(okP + skipP >= LIMIT) break;
@@ -952,25 +987,20 @@ async function restoreJSON(evt){
     await loadPersonel(true);
     const pmap = new Map(personelList.map(x=>[x.ad?.toLowerCase(), x.id]));
 
-    // Hareket
     for(const item of h){
       if(!item) { skipH++; continue; }
+
+      let pid = item[COL_PID];
       const ad = (item.personel_ad || item.personelName || '').toString().trim().toLowerCase();
-      let personel_id = item.personel_id;
+      if(ad && pmap.has(ad)) pid = pmap.get(ad);
 
-      // Eğer backup personel_id ile geldi ama yeni tabloda uyuşmayabilir.
-      // Ad ile eşleştirme denemesi:
-      if(ad && pmap.has(ad)) personel_id = pmap.get(ad);
-
-      // personel_id yoksa atla
-      if(!personel_id){ skipH++; continue; }
+      if(!pid){ skipH++; continue; }
 
       const payload = {
-        personel_id,
-        tip: item.tip || 'NOT',
-        etiket: item.etiket || null,
-        not: item.not || null,
-        tarih: item.tarih || new Date().toISOString()
+        [COL_PID]: pid,
+        [COL_TYPE]: item[COL_TYPE] || item.tip || item.tur || 'NOT',
+        [COL_NOTE]: item[COL_NOTE] || item.not || null,
+        [COL_DATE]: item[COL_DATE] || item.tarih || new Date().toISOString()
       };
 
       const { error } = await supa.from(TBL_HAREKET).insert(payload);
@@ -987,7 +1017,7 @@ async function restoreJSON(evt){
 }
 
 /* =========================
-   📤 EXPORT XLSX (5000 limit)
+   📤 EXPORT XLSX
 ========================= */
 function exportXLSX(){
   try{
@@ -995,11 +1025,10 @@ function exportXLSX(){
     const pmap = new Map(personelList.map(p => [p.id, p.ad || '']));
 
     const data = rows.slice(0, LIMIT).map(r=>({
-      "Tarih": fmtDT(r.tarih),
-      "Personel": pmap.get(r.personel_id) || '',
-      "Tür": r.tip || '',
-      "Etiket": r.etiket || '',
-      "Not": r.not || ''
+      "Tarih": fmtDT(r[COL_DATE]),
+      "Personel": pmap.get(r[COL_PID]) || '',
+      "Tür": r[COL_TYPE] || '',
+      "Not": r[COL_NOTE] || ''
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
