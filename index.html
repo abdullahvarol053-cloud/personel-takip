@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Personel Takip (FINAL - Beyaz - Şifre HTML'de)</title>
+  <title>Personel Takip (FINAL)</title>
 
   <style>
     :root{
@@ -69,8 +69,6 @@
     .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media(max-width:700px){.two{grid-template-columns:1fr}}
     .hide{display:none!important}
-
-    /* Modal */
     .modalBack{
       position:fixed;inset:0;background:rgba(15,23,42,.25);
       display:none;align-items:flex-start;justify-content:center;padding-top:80px;z-index:90
@@ -105,7 +103,7 @@
         Tarih: <span class="kbd">başlangıç</span>–<span class="kbd">bitiş</span> (gün sonu dahil)
       </span>
       <div class="spacer"></div>
-      <span class="muted" id="colsInfo">Kolonlar: hareket(created_at/tur/not_text) personel(ad_soyad)</span>
+      <span class="muted" id="colsInfo">Kolonlar: hareketler(created_at/tur/not_text) personel(personel_key/ad)</span>
     </div>
   </div>
 </header>
@@ -236,7 +234,7 @@
       <div class="spacer"></div>
       <button class="btn secondary mini" id="btnAdminClose">Kapat</button>
     </div>
-    <div class="muted" style="margin-top:6px">PIN ile giriş. (PIN HTML içinde, Ctrl+F: <span class="kbd">ADMIN_PIN</span>)</div>
+    <div class="muted" style="margin-top:6px">PIN HTML içinde: Ctrl+F → <span class="kbd">ADMIN_PIN</span></div>
 
     <div class="hr"></div>
 
@@ -278,23 +276,12 @@
 
       <div class="hr"></div>
 
-      <h3 style="margin:0 0 8px; font-size:13px">Yedek / Geri Yükle</h3>
-      <div class="row">
-        <button class="btn secondary mini" id="btnBackup">JSON İndir</button>
-        <label class="btn secondary mini" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px">
-          JSON Yükle
-          <input id="fileRestore" type="file" accept="application/json" style="display:none" />
-        </label>
-        <div class="spacer"></div>
-        <span class="muted" id="restoreReport">—</span>
-      </div>
-
-      <div class="hr"></div>
-
-      <h3 style="margin:0 0 8px; font-size:13px">Kayıt Silme</h3>
+      <h3 style="margin:0 0 8px; font-size:13px">Temizlik</h3>
       <div class="row">
         <button class="btn danger mini" id="btnDeleteRow">Seçili satırı sil</button>
-        <span class="muted">Listeden “Seç” → sonra buradan sil.</span>
+        <button class="btn secondary mini" id="btnCleanUndefined">undefined kayıtları temizle</button>
+        <div class="spacer"></div>
+        <span class="muted">“undefined” görürsen tek tıkla sil.</span>
       </div>
     </div>
 
@@ -309,24 +296,25 @@
 
 <script>
 /* =========================
-   AYARLAR (BUNLAR KOLAY)
+   AYARLAR
 ========================= */
 const LIMIT = 5000;
 const PAGE_SIZE = 100;
+document.getElementById("limitPill").textContent = String(LIMIT);
 
-/* ✅ Admin şifresi burada: Ctrl+F -> ADMIN_PIN */
+/* ✅ Admin şifresi burada */
 const ADMIN_PIN = "32";
 
-/* ✅ Supabase Config (DOLDUR) */
-const SUPABASE_URL  = "https://ngnpocqaznpuggsvwbif.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
+/* ✅ Supabase Config (SENİN GİRDİĞİN) */
+const SUPABASE_URL  = "https://ngnpocqaznpuggsvwbif.supabase.co".trim();
+const SUPABASE_ANON = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec`.replace(/\s+/g,'');
 
 /* ✅ Tablo/kolonlar (SENDE BÖYLE) */
-const TBL_PERSONEL = "personeller";
+const TBL_PERSONEL = "personel";
 const TBL_HAREKET  = "hareketler";
 
-const COL_PERSONEL_ID   = "personel_id";
-const COL_PERSONEL_NAME = "ad_soyad";
+const COL_PERSONEL_ID   = "personel_key";
+const COL_PERSONEL_NAME = "ad";
 
 const COL_H_ID    = "id";
 const COL_H_PID   = "personel_id";
@@ -357,18 +345,15 @@ function toast(title,msg){
   clearTimeout(toast._t);
   toast._t = setTimeout(()=> $("toast").classList.remove("show"), 2600);
 }
-
 function setStatus(text, ok=true){
   $("statusPill").textContent = "Durum: " + text;
   $("liveTag").innerHTML = ok ? `<span class="dot ok"></span>Bağlı` : `<span class="dot warn"></span>${text}`;
 }
-
 function escapeHtml(s){
   return (s ?? "").toString()
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
-
 function fmtDT(iso){
   try{
     const d = new Date(iso);
@@ -376,37 +361,20 @@ function fmtDT(iso){
     return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }catch{ return iso || ""; }
 }
-
-function startOfDayISO(dateStr){
-  if(!dateStr) return null;
-  return new Date(dateStr + "T00:00:00").toISOString();
-}
-function endOfDayISO(dateStr){
-  if(!dateStr) return null;
-  return new Date(dateStr + "T23:59:59.999").toISOString();
-}
+function startOfDayISO(dateStr){ if(!dateStr) return null; return new Date(dateStr + "T00:00:00").toISOString(); }
+function endOfDayISO(dateStr){ if(!dateStr) return null; return new Date(dateStr + "T23:59:59.999").toISOString(); }
 
 /* =========================
-   ADMIN (ŞİFRE HTML'DE)
+   ADMIN
 ========================= */
-function adminLockedUntil(){
-  const t = Number(localStorage.getItem(STORAGE.ADMIN_LOCK_UNTIL) || "0");
-  return t;
-}
-function isLocked(){
-  const until = adminLockedUntil();
-  return until && Date.now() < until;
-}
+function adminLockedUntil(){ return Number(localStorage.getItem(STORAGE.ADMIN_LOCK_UNTIL) || "0"); }
+function isLocked(){ const until = adminLockedUntil(); return until && Date.now() < until; }
 function lockInfoText(){
   const until = adminLockedUntil();
-  if(!until) return "—";
-  if(Date.now() >= until) return "—";
-  const d = new Date(until);
-  return "Kilitli: " + d.toLocaleString("tr-TR");
+  if(!until || Date.now() >= until) return "—";
+  return "Kilitli: " + new Date(until).toLocaleString("tr-TR");
 }
-function getTry(){
-  return Number(localStorage.getItem(STORAGE.ADMIN_TRY) || "0");
-}
+function getTry(){ return Number(localStorage.getItem(STORAGE.ADMIN_TRY) || "0"); }
 function setTry(n){
   localStorage.setItem(STORAGE.ADMIN_TRY, String(n));
   $("pinTry").textContent = String(n);
@@ -419,14 +387,8 @@ function clearLock(){
   localStorage.removeItem(STORAGE.ADMIN_LOCK_UNTIL);
   $("lockInfo").textContent = "—";
 }
-
-function isAdmin(){
-  return sessionStorage.getItem(STORAGE.ADMIN_OK) === "1";
-}
-function setAdmin(on){
-  if(on) sessionStorage.setItem(STORAGE.ADMIN_OK, "1");
-  else sessionStorage.removeItem(STORAGE.ADMIN_OK);
-}
+function isAdmin(){ return sessionStorage.getItem(STORAGE.ADMIN_OK) === "1"; }
+function setAdmin(on){ if(on) sessionStorage.setItem(STORAGE.ADMIN_OK,"1"); else sessionStorage.removeItem(STORAGE.ADMIN_OK); }
 
 function openAdmin(show){
   const back = $("adminBack");
@@ -437,52 +399,42 @@ function openAdmin(show){
     const ok = isAdmin();
     $("adminLocked").classList.toggle("hide", ok);
     $("adminUnlocked").classList.toggle("hide", !ok);
-
     $("pinTry").textContent = String(getTry());
   }else{
     back.classList.remove("show");
   }
 }
-
 function adminLogin(){
   $("lockInfo").textContent = lockInfoText();
-
-  if(isLocked()){
-    toast("Admin", "Çok deneme oldu. Şu an kilitli.");
-    return;
-  }
+  if(isLocked()) return toast("Admin","Çok deneme oldu. Şu an kilitli.");
 
   const pin = ($("adminPin").value || "").trim();
   if(pin === ADMIN_PIN){
     setAdmin(true);
     $("adminPin").value = "";
-    setTry(0);
-    clearLock();
-    toast("Admin", "Giriş başarılı ✅");
+    setTry(0); clearLock();
+    toast("Admin","Giriş başarılı ✅");
     openAdmin(true);
-    renderTable(); // butonlar admin oldu
+    renderTable();
   }else{
     const t = getTry() + 1;
     setTry(t);
-    toast("Admin", "PIN yanlış.");
-
-    // 5 yanlış -> 24 saat kilit
+    toast("Admin","PIN yanlış.");
     if(t >= 5){
-      setLock(24 * 60 * 60 * 1000);
-      toast("Admin", "5 yanlış deneme. 24 saat kilitlendi.");
+      setLock(24*60*60*1000);
+      toast("Admin","5 yanlış deneme. 24 saat kilitlendi.");
     }
   }
 }
-
 function adminLogout(){
   setAdmin(false);
-  toast("Admin", "Çıkış yapıldı.");
+  toast("Admin","Çıkış yapıldı.");
   openAdmin(true);
   renderTable();
 }
 
 /* =========================
-   VERİ
+   FİLTRE KAYIT
 ========================= */
 function saveFiltersToStorage(){
   const f = {
@@ -493,7 +445,6 @@ function saveFiltersToStorage(){
   };
   localStorage.setItem(STORAGE.LAST_FILTERS, JSON.stringify(f));
 }
-
 function loadFiltersFromStorage(){
   try{
     const raw = localStorage.getItem(STORAGE.LAST_FILTERS);
@@ -505,47 +456,51 @@ function loadFiltersFromStorage(){
   }catch{}
 }
 
+/* =========================
+   PERSONEL
+========================= */
 function fillPersonelSelects(){
-  const optBase = [];
-  const optFilter = [`<option value="">(Hepsi)</option>`];
+  const base = [];
+  const filter = [`<option value="">(Hepsi)</option>`];
 
   if(!personeller.length){
-    optBase.push(`<option value="" disabled selected>Personel yok</option>`);
-    optFilter.push(`<option value="" disabled>Personel yok</option>`);
+    base.push(`<option value="" disabled selected>Personel yok</option>`);
+    filter.push(`<option value="" disabled>Personel yok</option>`);
   }else{
     for(const p of personeller){
       const id = p[COL_PERSONEL_ID];
       const name = (p[COL_PERSONEL_NAME] || "").trim();
-      const label = name ? name : id;
-      optBase.push(`<option value="${escapeHtml(String(id))}">${escapeHtml(label)}</option>`);
-      optFilter.push(`<option value="${escapeHtml(String(id))}">${escapeHtml(label)}</option>`);
+      const label = name || String(id || "");
+      base.push(`<option value="${escapeHtml(String(id))}">${escapeHtml(label)}</option>`);
+      filter.push(`<option value="${escapeHtml(String(id))}">${escapeHtml(label)}</option>`);
     }
   }
 
-  $("selPersonel").innerHTML = optBase.join("");
-  $("selFilterPersonel").innerHTML = optFilter.join("");
+  $("selPersonel").innerHTML = base.join("");
+  $("selFilterPersonel").innerHTML = filter.join("");
 
-  // eski seçimi geri bas
   try{
     const f = JSON.parse(localStorage.getItem(STORAGE.LAST_FILTERS) || "{}");
     if(f.p) $("selFilterPersonel").value = f.p;
   }catch{}
 }
-
 async function loadPersoneller(){
-  const { data, error } = await supa.from(TBL_PERSONEL).select("*").order(COL_PERSONEL_NAME, { ascending:true }).limit(LIMIT);
+  const { data, error } = await supa.from(TBL_PERSONEL).select("*").order(COL_PERSONEL_NAME, {ascending:true}).limit(LIMIT);
   if(error) throw error;
   personeller = data || [];
   fillPersonelSelects();
 }
 
+/* =========================
+   HAREKET
+========================= */
 async function loadHareketler(){
   const q = ($("inpAra").value || "").trim().toLowerCase();
   const pidFilter = $("selFilterPersonel").value || "";
   const start = $("inpStart").value;
   const end = $("inpEnd").value;
 
-  let query = supa.from(TBL_HAREKET).select("*").limit(LIMIT).order(COL_H_DATE, {ascending:false});
+  let query = supa.from(TBL_HAREKET).select("*").limit(LIMIT).order(COL_H_DATE,{ascending:false});
 
   const sIso = startOfDayISO(start);
   const eIso = endOfDayISO(end);
@@ -557,11 +512,8 @@ async function loadHareketler(){
   if(error) throw error;
 
   const raw = data || [];
-
-  // personel id->ad
   const pmap = new Map(personeller.map(p => [p[COL_PERSONEL_ID], (p[COL_PERSONEL_NAME]||"").trim()]));
 
-  // arama: personel adı + not + tür
   hareketler = q ? raw.filter(r=>{
     const pid = r[COL_H_PID];
     const ad = (pmap.get(pid) || "").toLowerCase();
@@ -580,7 +532,7 @@ function renderTable(){
   if(page > maxPage) page = maxPage;
   $("pageInfo").textContent = `${page} / ${maxPage}`;
 
-  const startIdx = (page-1) * PAGE_SIZE;
+  const startIdx = (page-1)*PAGE_SIZE;
   const slice = hareketler.slice(startIdx, startIdx + PAGE_SIZE);
 
   const canAdmin = isAdmin();
@@ -588,7 +540,7 @@ function renderTable(){
   const html = slice.map(r=>{
     const id = r[COL_H_ID];
     const pid = r[COL_H_PID];
-    const ad = pmap.get(pid) || pid || "—";
+    const ad = pmap.get(pid) || (pid ? String(pid) : "—");
     const tur = r[COL_H_TUR] || "—";
     const note = r[COL_H_NOTE] || "";
     const dt = r[COL_H_DATE] || "";
@@ -613,38 +565,31 @@ function renderTable(){
   $("tbody").innerHTML = html || `<tr><td colspan="5" class="muted">Kayıt yok.</td></tr>`;
 }
 
-window.__pickRow = (id)=>{
-  selectedRowId = id;
-  toast("Seçildi", "Satır seçildi ✅");
-};
-
-window.__deleteRow = async (id)=>{
-  if(!isAdmin()) return toast("Yetki", "Silmek için Admin girişi gerekli.");
-  await deleteRow(id);
-};
+window.__pickRow = (id)=>{ selectedRowId = id; toast("Seçildi","Satır seçildi ✅"); };
+window.__deleteRow = async (id)=>{ if(!isAdmin()) return toast("Yetki","Admin gerekli."); await deleteRow(id); };
 
 async function deleteRow(id){
   if(!confirm("Bu satır silinsin mi?")) return;
   const { error } = await supa.from(TBL_HAREKET).delete().eq(COL_H_ID, id);
   if(error) return toast("Hata", error.message);
-  toast("Sil", "Silindi ✅");
+  toast("Sil","Silindi ✅");
   selectedRowId = null;
-  await refreshAll(true);
+  await refreshAll(false);
 }
 
 /* =========================
-   KAYDET / FORM
+   KAYDET
 ========================= */
 function clearForm(){
-  $("inpDT").value = "";
-  $("selTur").value = "giris";
-  $("inpEtiket").value = "";
-  $("inpNot").value = "";
+  $("inpDT").value="";
+  $("selTur").value="giris";
+  $("inpEtiket").value="";
+  $("inpNot").value="";
 }
 
 async function saveHareket(){
   const pid = $("selPersonel").value;
-  if(!pid) return toast("Eksik", "Personel seç.");
+  if(!pid) return toast("Eksik","Personel seç.");
 
   const dt = $("inpDT").value;
   const iso = dt ? new Date(dt).toISOString() : new Date().toISOString();
@@ -665,9 +610,9 @@ async function saveHareket(){
   try{
     const { error } = await supa.from(TBL_HAREKET).insert(payload);
     if(error) throw error;
-    toast("Kayıt", "Kaydedildi ✅");
+    toast("Kayıt","Kaydedildi ✅");
     clearForm();
-    await refreshAll(true);
+    await refreshAll(false);
   }catch(e){
     toast("Hata", e.message || String(e));
     setStatus("Kayıt hatası", false);
@@ -677,166 +622,81 @@ async function saveHareket(){
 }
 
 /* =========================
-   ADMIN: PERSONEL
+   ADMIN: PERSONEL EKLE/SİL
 ========================= */
-async function addPersonel(){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
-  const name = ($("inpNewPersonel").value || "").trim();
-  if(!name) return toast("Eksik", "Personel adı yaz.");
+function genKey(){
+  if (crypto && crypto.randomUUID) return crypto.randomUUID();
+  return "p_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+}
 
-  const { error } = await supa.from(TBL_PERSONEL).insert({ [COL_PERSONEL_NAME]: name });
+async function addPersonel(){
+  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
+  const name = ($("inpNewPersonel").value || "").trim();
+  if(!name) return toast("Eksik","Personel adı yaz.");
+
+  const key = genKey();
+
+  const { error } = await supa.from(TBL_PERSONEL).insert({
+    [COL_PERSONEL_ID]: key,
+    [COL_PERSONEL_NAME]: name
+  });
   if(error) return toast("Hata", error.message);
 
   $("inpNewPersonel").value = "";
-  toast("Personel", "Eklendi ✅");
-  await refreshAll(true);
+  toast("Personel","Eklendi ✅");
+  await refreshAll(false);
 }
 
 async function delSelectedPersonel(){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
+  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
   const pid = $("selPersonel").value;
-  if(!pid) return toast("Eksik", "Silmek için personel seç.");
-
+  if(!pid) return toast("Eksik","Silmek için personel seç.");
   if(!confirm("Seçili personel silinsin mi?")) return;
 
   const { error } = await supa.from(TBL_PERSONEL).delete().eq(COL_PERSONEL_ID, pid);
   if(error) return toast("Hata", error.message);
 
-  toast("Personel", "Silindi ✅");
-  await refreshAll(true);
+  toast("Personel","Silindi ✅");
+  await refreshAll(false);
 }
 
-/* =========================
-   YEDEK / GERİ YÜKLE
-========================= */
-async function backupJSON(){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
+async function cleanUndefinedRows(){
+  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
+  if(!confirm("personel_id = 'undefined' olan kayıtlar silinsin mi?")) return;
 
-  try{
-    const { data: p, error: ep } = await supa.from(TBL_PERSONEL).select("*").limit(LIMIT);
-    if(ep) throw ep;
+  let errMsg = "";
+  const r1 = await supa.from(TBL_HAREKET).delete().eq(COL_H_PID, "undefined");
+  if(r1.error) errMsg += r1.error.message + " ";
 
-    const { data: h, error: eh } = await supa.from(TBL_HAREKET).select("*").limit(LIMIT);
-    if(eh) throw eh;
+  const r2 = await supa.from(TBL_HAREKET).delete().is(COL_H_PID, null);
+  if(r2.error) errMsg += r2.error.message + " ";
 
-    // hareketlere personel adı da ekleyelim (geri yüklemede kolay)
-    const pmap = new Map((p||[]).map(x => [x[COL_PERSONEL_ID], (x[COL_PERSONEL_NAME]||"").trim()]));
-    const h2 = (h||[]).map(r => ({
-      id: r[COL_H_ID],
-      created_at: r[COL_H_DATE],
-      tur: r[COL_H_TUR],
-      not_text: r[COL_H_NOTE],
-      personel_id: r[COL_H_PID],
-      personel_ad: pmap.get(r[COL_H_PID]) || ""
-    }));
-
-    const out = {
-      meta: { createdAt: new Date().toISOString(), limit: LIMIT },
-      personeller: (p||[]).map(x => ({ id: x[COL_PERSONEL_ID], ad_soyad: x[COL_PERSONEL_NAME] })),
-      hareketler: h2
-    };
-
-    const blob = new Blob([JSON.stringify(out,null,2)], {type:"application/json"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "personel_takip_yedek_" + new Date().toISOString().slice(0,10) + ".json";
-    a.click();
-    toast("Yedek", "JSON indirildi ✅");
-  }catch(e){
-    toast("Hata", e.message || String(e));
-  }
-}
-
-async function restoreJSON(evt){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
-  const file = evt.target.files?.[0];
-  evt.target.value = "";
-  if(!file) return;
-
-  try{
-    const json = JSON.parse(await file.text());
-    const p = Array.isArray(json.personeller) ? json.personeller : [];
-    const h = Array.isArray(json.hareketler) ? json.hareketler : [];
-
-    // mevcut personelleri çek
-    await loadPersoneller();
-    const byName = new Map(personeller.map(x => [((x[COL_PERSONEL_NAME]||"").trim().toLowerCase()), x[COL_PERSONEL_ID]]));
-
-    let okP=0, skipP=0, okH=0, skipH=0;
-
-    // personel ekle (adı yoksa atla)
-    for(const item of p){
-      const name = (item.ad_soyad || "").trim();
-      if(!name){ skipP++; continue; }
-
-      const key = name.toLowerCase();
-      if(byName.has(key)){ skipP++; continue; }
-
-      const { error } = await supa.from(TBL_PERSONEL).insert({ [COL_PERSONEL_NAME]: name });
-      if(error){ skipP++; }
-      else { okP++; }
-
-      if(okP + skipP >= LIMIT) break;
-    }
-
-    // tekrar çek ve map güncelle
-    await loadPersoneller();
-    const byName2 = new Map(personeller.map(x => [((x[COL_PERSONEL_NAME]||"").trim().toLowerCase()), x[COL_PERSONEL_ID]]));
-
-    // hareket ekle (id göndermeden insert)
-    for(const item of h){
-      let pid = item.personel_id || null;
-      const ad = (item.personel_ad || "").trim().toLowerCase();
-
-      if(!pid && ad && byName2.has(ad)) pid = byName2.get(ad);
-      if(!pid){ skipH++; continue; }
-
-      const payload = {
-        [COL_H_PID]: pid,
-        [COL_H_DATE]: item.created_at || new Date().toISOString(),
-        [COL_H_TUR]: item.tur || "not",
-        [COL_H_NOTE]: item.not_text || null
-      };
-
-      const { error } = await supa.from(TBL_HAREKET).insert(payload);
-      if(error){ skipH++; }
-      else { okH++; }
-
-      if(okH + skipH >= LIMIT) break;
-    }
-
-    $("restoreReport").textContent = `Personel: +${okP} (atla:${skipP}) | Hareket: +${okH} (atla:${skipH})`;
-    toast("Geri Yükle", "Bitti ✅");
-    await refreshAll(true);
-  }catch(e){
-    toast("Hata", e.message || String(e));
-  }
+  if(errMsg.trim()) return toast("Hata", errMsg.trim());
+  toast("Temizlik","undefined kayıtlar silindi ✅");
+  await refreshAll(false);
 }
 
 /* =========================
    EXCEL
 ========================= */
 function exportXLSX(){
-  if(!hareketler.length) return toast("Excel", "Kayıt yok.");
-
+  if(!hareketler.length) return toast("Excel","Kayıt yok.");
   const pmap = new Map(personeller.map(p => [p[COL_PERSONEL_ID], (p[COL_PERSONEL_NAME]||"").trim()]));
-
   const data = hareketler.slice(0, LIMIT).map(r => ({
     "Tarih": fmtDT(r[COL_H_DATE]),
-    "Personel": pmap.get(r[COL_H_PID]) || r[COL_H_PID] || "",
+    "Personel": pmap.get(r[COL_H_PID]) || (r[COL_H_PID] || ""),
     "Tür": r[COL_H_TUR] || "",
     "Not": r[COL_H_NOTE] || ""
   }));
-
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Hareketler");
   XLSX.writeFile(wb, "personel_hareketleri_" + new Date().toISOString().slice(0,10) + ".xlsx");
-  toast("Excel", "XLSX indirildi ✅");
+  toast("Excel","XLSX indirildi ✅");
 }
 
 /* =========================
-   REFRESH
+   REFRESH + INIT
 ========================= */
 async function refreshAll(showToast){
   saveFiltersToStorage();
@@ -850,7 +710,7 @@ async function refreshAll(showToast){
     await loadHareketler();
     renderTable();
     setStatus("Hazır", true);
-    if(showToast) toast("Senkron", "Güncellendi ✅");
+    if(showToast) toast("Senkron","Güncellendi ✅");
   }catch(e){
     setStatus("Hata", false);
     toast("Hata", e.message || String(e));
@@ -861,23 +721,14 @@ async function refreshAll(showToast){
   }
 }
 
-/* =========================
-   EVENTS + INIT
-========================= */
 function wire(){
-  $("limitPill").textContent = String(LIMIT);
-
   $("btnKaydet").addEventListener("click", saveHareket);
   $("btnTemizle").addEventListener("click", clearForm);
 
   $("btnUygula").addEventListener("click", async()=>{ page=1; await refreshAll(false); });
   $("btnSifirla").addEventListener("click", async()=>{
-    $("inpAra").value = "";
-    $("inpStart").value = "";
-    $("inpEnd").value = "";
-    $("selFilterPersonel").value = "";
-    page=1;
-    await refreshAll(false);
+    $("inpAra").value=""; $("inpStart").value=""; $("inpEnd").value=""; $("selFilterPersonel").value="";
+    page=1; await refreshAll(false);
   });
 
   $("btnPrev").addEventListener("click", ()=>{ if(page>1){ page--; renderTable(); } });
@@ -891,24 +742,20 @@ function wire(){
 
   $("btnAdmin").addEventListener("click", ()=>openAdmin(true));
   $("btnAdminClose").addEventListener("click", ()=>openAdmin(false));
-
   $("btnAdminLogin").addEventListener("click", adminLogin);
   $("btnAdminLogout").addEventListener("click", adminLogout);
 
   $("btnAddPersonel").addEventListener("click", addPersonel);
   $("btnDelPersonel").addEventListener("click", delSelectedPersonel);
-
-  $("btnBackup").addEventListener("click", backupJSON);
-  $("fileRestore").addEventListener("change", restoreJSON);
-
   $("btnDeleteRow").addEventListener("click", async()=>{
-    if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
-    if(!selectedRowId) return toast("Sil", "Önce listeden bir satır seç.");
+    if(!isAdmin()) return toast("Yetki","Admin gerekli.");
+    if(!selectedRowId) return toast("Sil","Önce listeden bir satır seç.");
     await deleteRow(selectedRowId);
   });
+  $("btnCleanUndefined").addEventListener("click", cleanUndefinedRows);
 
   $("inpAra").addEventListener("keydown", async(e)=>{
-    if(e.key === "Enter"){ page=1; await refreshAll(false); }
+    if(e.key==="Enter"){ page=1; await refreshAll(false); }
   });
 
   $("tbody").addEventListener("click",(e)=>{
@@ -922,12 +769,11 @@ function wire(){
   loadFiltersFromStorage();
 
   try{
-    if(SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON.includes("YOUR_")){
+    if(!SUPABASE_URL || !SUPABASE_ANON || SUPABASE_ANON.length < 50){
       setStatus("Supabase ayarı yok", false);
-      toast("Ayar", "SUPABASE_URL ve SUPABASE_ANON doldur.");
+      toast("Ayar","SUPABASE_URL / ANON eksik.");
       return;
     }
-
     supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     setStatus("Bağlantı hazır", true);
 
