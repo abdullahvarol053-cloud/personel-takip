@@ -1,20 +1,29 @@
+<!-- FINAL temizleme yap -->
 <!doctype html>
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Personel Takip (FINAL - Auto Kolon V2 - Beyaz)</title>
+  <title>Personel Takip (FINAL - Beyaz - Şifre HTML'de)</title>
 
   <style>
     :root{
-      --bg:#f6f8fc; --card:#ffffff; --txt:#0f172a; --muted:#64748b;
-      --line:rgba(15,23,42,.10); --btn:#2563eb; --btn2:#eef2ff;
-      --danger:#ef4444; --ok:#16a34a; --warn:#f59e0b; --radius:14px;
+      --bg:#f6f8fc;
+      --card:#ffffff;
+      --txt:#0f172a;
+      --muted:#64748b;
+      --line:rgba(15,23,42,.10);
+      --btn:#2563eb;
+      --btn2:#eef2ff;
+      --danger:#ef4444;
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --radius:14px;
       --shadow: 0 10px 30px rgba(15,23,42,.08);
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--txt)}
-    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.88);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
     .wrap{max-width:1100px;margin:0 auto;padding:14px}
     .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .spacer{flex:1}
@@ -26,7 +35,10 @@
     .card h2{margin:0 0 10px;font-size:14px}
     .muted{color:var(--muted);font-size:12px}
     label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-    input,select,textarea{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(15,23,42,.14);background:#fff;color:var(--txt);outline:none}
+    input,select,textarea{
+      width:100%;padding:10px;border-radius:12px;border:1px solid rgba(15,23,42,.14);
+      background:#fff;color:var(--txt);outline:none
+    }
     input:focus,select:focus,textarea:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.12)}
     textarea{min-height:88px;resize:vertical}
     .btn{border:0;cursor:pointer;padding:10px 12px;border-radius:12px;color:white;background:var(--btn);font-weight:800;font-size:13px}
@@ -46,13 +58,29 @@
     .dot.ok{background:var(--ok)}
     .dot.warn{background:var(--warn)}
     .dot.err{background:var(--danger)}
-    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#fff;border:1px solid var(--line);padding:10px 12px;border-radius:14px;box-shadow:0 18px 60px rgba(15,23,42,.15);display:none;max-width:min(92vw,780px);z-index:99}
+    .toast{
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      background:#fff;border:1px solid var(--line);padding:10px 12px;border-radius:14px;
+      box-shadow:0 18px 60px rgba(15,23,42,.15);display:none;max-width:min(92vw,780px);z-index:99
+    }
     .toast.show{display:block}
     .toast b{font-size:13px}
     .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:2px 6px;border-radius:8px;border:1px solid var(--line);background:rgba(15,23,42,.02);color:#0f172a}
     .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media(max-width:700px){.two{grid-template-columns:1fr}}
     .hide{display:none!important}
+
+    /* Modal */
+    .modalBack{
+      position:fixed;inset:0;background:rgba(15,23,42,.25);
+      display:none;align-items:flex-start;justify-content:center;padding-top:80px;z-index:90
+    }
+    .modalBack.show{display:flex}
+    .modal{
+      width:min(720px,92vw);
+      background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(15,23,42,.2);
+      padding:12px
+    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -65,18 +93,19 @@
     <div class="row">
       <h1>Personel Takip</h1>
       <span class="pill" id="statusPill">Durum: —</span>
-      <span class="pill">Limit: <b>5000</b></span>
+      <span class="pill">Limit: <b id="limitPill">5000</b></span>
       <div class="spacer"></div>
       <button class="btn secondary mini" id="btnSync">Sunucudan Senkronize Et</button>
       <button class="btn secondary mini" id="btnAdmin">Admin</button>
     </div>
+
     <div class="row" style="margin-top:8px">
       <span class="muted">
         Arama: <span class="kbd">personel</span> + <span class="kbd">not</span> |
         Tarih: <span class="kbd">başlangıç</span>–<span class="kbd">bitiş</span> (gün sonu dahil)
       </span>
       <div class="spacer"></div>
-      <span class="muted" id="colsInfo">Kolonlar: —</span>
+      <span class="muted" id="colsInfo">Kolonlar: hareket(created_at/tur/not_text) personel(ad_soyad)</span>
     </div>
   </div>
 </header>
@@ -103,10 +132,10 @@
       <div class="two" style="margin-top:10px">
         <div>
           <label>Tür</label>
-          <select id="selTip">
-            <option value="GIRIS">Giriş</option>
-            <option value="CIKIS">Çıkış</option>
-            <option value="NOT">Not</option>
+          <select id="selTur">
+            <option value="giris">Giriş</option>
+            <option value="cikis">Çıkış</option>
+            <option value="not">Not</option>
           </select>
         </div>
         <div>
@@ -178,7 +207,7 @@
           <thead>
             <tr>
               <th style="min-width:140px">Tarih</th>
-              <th style="min-width:130px">Personel</th>
+              <th style="min-width:150px">Personel</th>
               <th style="min-width:90px">Tür</th>
               <th>Not</th>
               <th class="right" style="min-width:110px">İşlem</th>
@@ -199,112 +228,127 @@
   </div>
 </main>
 
-<div id="adminModal" class="toast" style="top:70px; bottom:auto; transform:translateX(-50%);">
-  <div class="row">
-    <b>Admin</b>
-    <div class="spacer"></div>
-    <button class="btn secondary mini" id="btnAdminClose">Kapat</button>
-  </div>
-  <div class="muted" style="margin-top:6px">PIN ile giriş. (PIN ekranda yazmaz.)</div>
-
-  <div class="hr"></div>
-
-  <div id="adminLocked">
-    <label>Admin PIN</label>
-    <input id="adminPin" type="password" placeholder="••••••" />
-    <div class="row" style="margin-top:10px">
-      <button class="btn" id="btnAdminLogin">Giriş</button>
-      <span class="muted">Yanlış deneme: <b id="pinTry">0</b></span>
-      <div class="spacer"></div>
-      <span class="muted">İlk kurulum localStorage</span>
-    </div>
-    <div class="muted" style="margin-top:8px">
-      Konsolda 1 kere: <span class="kbd">localStorage.setItem('ADMIN_PIN','070707')</span>
-    </div>
-  </div>
-
-  <div id="adminUnlocked" class="hide">
+<!-- ADMIN MODAL -->
+<div class="modalBack" id="adminBack">
+  <div class="modal">
     <div class="row">
-      <span class="tag"><span class="dot ok"></span>Admin aktif</span>
+      <b>Admin</b>
       <div class="spacer"></div>
-      <button class="btn secondary mini" id="btnAdminLogout">Çıkış</button>
+      <button class="btn secondary mini" id="btnAdminClose">Kapat</button>
     </div>
+    <div class="muted" style="margin-top:6px">PIN ile giriş. (PIN HTML içinde, Ctrl+F: <span class="kbd">ADMIN_PIN</span>)</div>
 
     <div class="hr"></div>
 
-    <h3 style="margin:0 0 8px; font-size:13px">Personel Yönetimi</h3>
-    <div class="two">
-      <div>
-        <label>Yeni personel adı</label>
-        <input id="inpNewPersonel" placeholder="örn: Süleyman" />
-      </div>
-      <div style="display:flex; gap:10px; align-items:flex-end">
-        <button class="btn ok" id="btnAddPersonel" style="width:100%">Ekle</button>
+    <div id="adminLocked">
+      <label>Admin PIN</label>
+      <input id="adminPin" type="password" placeholder="••••••" />
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btnAdminLogin">Giriş</button>
+        <span class="muted">Yanlış deneme: <b id="pinTry">0</b></span>
+        <div class="spacer"></div>
+        <span class="muted" id="lockInfo">—</span>
       </div>
     </div>
 
-    <div class="row" style="margin-top:10px">
-      <button class="btn danger mini" id="btnDelPersonel">Seçili personeli sil</button>
-      <span class="muted">FK varsa Supabase engeller.</span>
+    <div id="adminUnlocked" class="hide">
+      <div class="row">
+        <span class="tag"><span class="dot ok"></span>Admin aktif</span>
+        <div class="spacer"></div>
+        <button class="btn secondary mini" id="btnAdminLogout">Çıkış</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 8px; font-size:13px">Personel Yönetimi</h3>
+      <div class="two">
+        <div>
+          <label>Yeni personel adı</label>
+          <input id="inpNewPersonel" placeholder="örn: Süleyman" />
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-end">
+          <button class="btn ok" id="btnAddPersonel" style="width:100%">Ekle</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn danger mini" id="btnDelPersonel">Seçili personeli sil</button>
+        <span class="muted">FK varsa Supabase engeller.</span>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 8px; font-size:13px">Yedek / Geri Yükle</h3>
+      <div class="row">
+        <button class="btn secondary mini" id="btnBackup">JSON İndir</button>
+        <label class="btn secondary mini" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px">
+          JSON Yükle
+          <input id="fileRestore" type="file" accept="application/json" style="display:none" />
+        </label>
+        <div class="spacer"></div>
+        <span class="muted" id="restoreReport">—</span>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 8px; font-size:13px">Kayıt Silme</h3>
+      <div class="row">
+        <button class="btn danger mini" id="btnDeleteRow">Seçili satırı sil</button>
+        <span class="muted">Listeden “Seç” → sonra buradan sil.</span>
+      </div>
     </div>
 
-    <div class="hr"></div>
-
-    <h3 style="margin:0 0 8px; font-size:13px">Yedek / Geri Yükle</h3>
-    <div class="row">
-      <button class="btn secondary mini" id="btnBackup">JSON İndir</button>
-      <label class="btn secondary mini" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px">
-        JSON Yükle
-        <input id="fileRestore" type="file" accept="application/json" style="display:none" />
-      </label>
-      <div class="spacer"></div>
-      <span class="muted" id="restoreReport">—</span>
-    </div>
-
-    <div class="hr"></div>
-
-    <h3 style="margin:0 0 8px; font-size:13px">Temizlik</h3>
-    <div class="row">
-      <button class="btn danger mini" id="btnDeleteRow">Seçili satırı sil</button>
-      <span class="muted">Listeden “Sil” de olur.</span>
-    </div>
   </div>
 </div>
 
+<!-- TOAST -->
 <div class="toast" id="toast">
   <b id="toastTitle">—</b>
   <div class="muted" id="toastMsg">—</div>
 </div>
 
 <script>
+/* =========================
+   AYARLAR (BUNLAR KOLAY)
+========================= */
 const LIMIT = 5000;
 const PAGE_SIZE = 100;
 
-// ✅ Supabase Config
-const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
+/* ✅ Admin şifresi burada: Ctrl+F -> ADMIN_PIN */
+const ADMIN_PIN = "070707";
 
-// ✅ Tablo adları
+/* ✅ Supabase Config (DOLDUR) */
+const SUPABASE_URL  = "https://ngnpocqaznpuggsvwbif.supabase.co
+";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec
+";
+
+/* ✅ Tablo/kolonlar (SENDE BÖYLE) */
 const TBL_PERSONEL = "personeller";
 const TBL_HAREKET  = "hareketler";
 
+const COL_PERSONEL_ID   = "id";
+const COL_PERSONEL_NAME = "ad_soyad";
+
+const COL_H_ID    = "id";
+const COL_H_PID   = "personel_id";
+const COL_H_DATE  = "created_at";
+const COL_H_TUR   = "tur";
+const COL_H_NOTE  = "not_text";
+
+/* ========================= */
 const STORAGE = {
-  ADMIN_PIN: "ADMIN_PIN",
-  ADMIN_OK: "ADMIN_OK",
-  LAST_FILTERS: "LAST_FILTERS",
-  CACHE_PERSONEL: "CACHE_PERSONEL"
+  ADMIN_OK: "PT_ADMIN_OK_SESSION",
+  ADMIN_TRY: "PT_ADMIN_TRY",
+  ADMIN_LOCK_UNTIL: "PT_ADMIN_LOCK_UNTIL",
+  LAST_FILTERS: "PT_LAST_FILTERS"
 };
 
 let supa = null;
-
-// Bulunan kolonlar
-let COLS = { hid:null, hpid:null, htype:null, hnote:null, hdate:null, pid:null, pname:null };
-
-let personelList = [];
-let rows = [];
+let personeller = [];
+let hareketler = [];
 let page = 1;
 let selectedRowId = null;
-let pinTry = 0;
 
 const $ = (id)=>document.getElementById(id);
 
@@ -315,15 +359,18 @@ function toast(title,msg){
   clearTimeout(toast._t);
   toast._t = setTimeout(()=> $("toast").classList.remove("show"), 2600);
 }
+
 function setStatus(text, ok=true){
-  $("statusPill").textContent = `Durum: ${text}`;
+  $("statusPill").textContent = "Durum: " + text;
   $("liveTag").innerHTML = ok ? `<span class="dot ok"></span>Bağlı` : `<span class="dot warn"></span>${text}`;
 }
+
 function escapeHtml(s){
   return (s ?? "").toString()
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
+
 function fmtDT(iso){
   try{
     const d = new Date(iso);
@@ -331,6 +378,7 @@ function fmtDT(iso){
     return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }catch{ return iso || ""; }
 }
+
 function startOfDayISO(dateStr){
   if(!dateStr) return null;
   return new Date(dateStr + "T00:00:00").toISOString();
@@ -340,92 +388,112 @@ function endOfDayISO(dateStr){
   return new Date(dateStr + "T23:59:59.999").toISOString();
 }
 
-async function colExists(table, col){
-  const { error } = await supa.from(table).select(col).limit(1);
-  return !error;
+/* =========================
+   ADMIN (ŞİFRE HTML'DE)
+========================= */
+function adminLockedUntil(){
+  const t = Number(localStorage.getItem(STORAGE.ADMIN_LOCK_UNTIL) || "0");
+  return t;
 }
-async function pickColByCandidates(table, list){
-  for(const c of list){
-    if(await colExists(table, c)) return c;
-  }
-  return null;
+function isLocked(){
+  const until = adminLockedUntil();
+  return until && Date.now() < until;
 }
-async function sampleRow(table){
-  const { data, error } = await supa.from(table).select("*").limit(1);
-  if(error) return null;
-  return (data && data[0]) ? data[0] : null;
+function lockInfoText(){
+  const until = adminLockedUntil();
+  if(!until) return "—";
+  if(Date.now() >= until) return "—";
+  const d = new Date(until);
+  return "Kilitli: " + d.toLocaleString("tr-TR");
 }
-function guessKeyFromRow(row, {
-  exclude = [],
-  preferIncludes = [],
-  avoidIncludes = []
-} = {}){
-  if(!row) return null;
-  const keys = Object.keys(row);
-
-  const okKeys = keys.filter(k=>{
-    const lk = k.toLowerCase();
-    if(exclude.includes(lk)) return false;
-    if(avoidIncludes.some(w => lk.includes(w))) return false;
-    return true;
-  });
-
-  // 1) keyword önceliği
-  for(const pref of preferIncludes){
-    const hit = okKeys.find(k => k.toLowerCase().includes(pref));
-    if(hit) return hit;
-  }
-
-  // 2) string dolu değer olan ilk kolon
-  for(const k of okKeys){
-    const v = row[k];
-    if(typeof v === "string" && v.trim().length) return k;
-  }
-
-  // 3) kalanlardan ilkini ver (en kötü ihtimal)
-  return okKeys[0] || null;
+function getTry(){
+  return Number(localStorage.getItem(STORAGE.ADMIN_TRY) || "0");
+}
+function setTry(n){
+  localStorage.setItem(STORAGE.ADMIN_TRY, String(n));
+  $("pinTry").textContent = String(n);
+}
+function setLock(msFromNow){
+  localStorage.setItem(STORAGE.ADMIN_LOCK_UNTIL, String(Date.now() + msFromNow));
+  $("lockInfo").textContent = lockInfoText();
+}
+function clearLock(){
+  localStorage.removeItem(STORAGE.ADMIN_LOCK_UNTIL);
+  $("lockInfo").textContent = "—";
 }
 
-async function detectColumnsV2(){
-  // ✅ önce kesinler
-  COLS.hid   = await pickColByCandidates(TBL_HAREKET,  ["id"]);
-  COLS.hpid  = await pickColByCandidates(TBL_HAREKET,  ["personel_id","personelId","pid","personel_uuid","personel"]);
-  COLS.htype = await pickColByCandidates(TBL_HAREKET,  ["tur","tip","type","islem","hareket_turu"]);
-  COLS.hnote = await pickColByCandidates(TBL_HAREKET,  ["not","aciklama","note","mesaj","yorum","detay","description","notu"]);
-  COLS.hdate = await pickColByCandidates(TBL_HAREKET,  ["tarih","created_at","createdAt","zaman","datetime","tarih_saat","ts"]);
+function isAdmin(){
+  return sessionStorage.getItem(STORAGE.ADMIN_OK) === "1";
+}
+function setAdmin(on){
+  if(on) sessionStorage.setItem(STORAGE.ADMIN_OK, "1");
+  else sessionStorage.removeItem(STORAGE.ADMIN_OK);
+}
 
-  COLS.pid   = await pickColByCandidates(TBL_PERSONEL, ["id"]);
-  COLS.pname = await pickColByCandidates(TBL_PERSONEL, ["ad","adi","isim","name","full_name","fullname","ad_soyad","adsoyad","personel_ad","personel_adi"]);
+function openAdmin(show){
+  const back = $("adminBack");
+  if(show){
+    back.classList.add("show");
+    $("lockInfo").textContent = lockInfoText();
 
-  // ✅ satırdan otomatik tahmin (esas kurtarıcı)
-  const pr = await sampleRow(TBL_PERSONEL);
-  if(!COLS.pname){
-    COLS.pname = guessKeyFromRow(pr, {
-      exclude: ["id","created_at","updated_at"],
-      preferIncludes: ["ad","isim","name","soyad","full","kisi","personel"],
-      avoidIncludes: ["id","_id","uuid"]
-    });
+    const ok = isAdmin();
+    $("adminLocked").classList.toggle("hide", ok);
+    $("adminUnlocked").classList.toggle("hide", !ok);
+
+    $("pinTry").textContent = String(getTry());
+  }else{
+    back.classList.remove("show");
+  }
+}
+
+function adminLogin(){
+  $("lockInfo").textContent = lockInfoText();
+
+  if(isLocked()){
+    toast("Admin", "Çok deneme oldu. Şu an kilitli.");
+    return;
   }
 
-  const hr = await sampleRow(TBL_HAREKET);
-  if(!COLS.hnote){
-    COLS.hnote = guessKeyFromRow(hr, {
-      exclude: ["id","created_at","updated_at"],
-      preferIncludes: ["not","acik","note","mesaj","yorum","detay","desc"],
-      avoidIncludes: ["id","_id","uuid","tur","tip","type","tarih","created_at"]
-    });
-  }
-  if(!COLS.hid && hr) COLS.hid = guessKeyFromRow(hr, { preferIncludes:["id"], avoidIncludes:["_id"] });
+  const pin = ($("adminPin").value || "").trim();
+  if(pin === ADMIN_PIN){
+    setAdmin(true);
+    $("adminPin").value = "";
+    setTry(0);
+    clearLock();
+    toast("Admin", "Giriş başarılı ✅");
+    openAdmin(true);
+    renderTable(); // butonlar admin oldu
+  }else{
+    const t = getTry() + 1;
+    setTry(t);
+    toast("Admin", "PIN yanlış.");
 
-  $("colsInfo").textContent =
-    `Kolonlar: hareket(${COLS.hdate||"?"}/${COLS.htype||"?"}/${COLS.hnote||"?"}) personel(${COLS.pname||"?"})`;
+    // 5 yanlış -> 24 saat kilit
+    if(t >= 5){
+      setLock(24 * 60 * 60 * 1000);
+      toast("Admin", "5 yanlış deneme. 24 saat kilitlendi.");
+    }
+  }
+}
 
-  if(!COLS.pname){
-    toast("Personel Kolonu", "Personel ad kolonu bulunamadı. Personeller tablosuna 1 satır ekleyip tekrar senkronize et.");
-  }
-  if(!COLS.hpid){
-    toast("Hareket Kolonu", "Hareket tablosunda personel_id benzeri kolon bulunamadı.");
-  }
+function adminLogout(){
+  setAdmin(false);
+  toast("Admin", "Çıkış yapıldı.");
+  openAdmin(true);
+  renderTable();
+}
+
+/* =========================
+   VERİ
+========================= */
+function saveFiltersToStorage(){
+  const f = {
+    q: $("inpAra").value.trim(),
+    p: $("selFilterPersonel").value || "",
+    start: $("inpStart").value || "",
+    end: $("inpEnd").value || ""
+  };
+  localStorage.setItem(STORAGE.LAST_FILTERS, JSON.stringify(f));
 }
 
 function loadFiltersFromStorage(){
@@ -438,219 +506,108 @@ function loadFiltersFromStorage(){
     $("inpEnd").value = f.end || "";
   }catch{}
 }
-function saveFiltersToStorage(){
-  const f = {
-    q: $("inpAra").value.trim(),
-    p: $("selFilterPersonel").value || "",
-    start: $("inpStart").value || "",
-    end: $("inpEnd").value || ""
-  };
-  localStorage.setItem(STORAGE.LAST_FILTERS, JSON.stringify(f));
-}
-function resetFilters(){
-  $("inpAra").value = "";
-  $("inpStart").value = "";
-  $("inpEnd").value = "";
-  $("selFilterPersonel").value = "";
-  saveFiltersToStorage();
-}
 
 function fillPersonelSelects(){
-  const opt = (all)=>{
-    const arr=[];
-    if(all) arr.push(`<option value="">(Hepsi)</option>`);
-    if(!personelList.length) arr.push(`<option value="" disabled selected>Personel yok</option>`);
-    for(const p of personelList){
-      const id = COLS.pid ? p[COLS.pid] : (p.id || "");
-      const name = COLS.pname ? (p[COLS.pname] || "") : "";
-      arr.push(`<option value="${escapeHtml(id)}">${escapeHtml(name || id || "—")}</option>`);
-    }
-    return arr.join("");
-  };
-  $("selPersonel").innerHTML = opt(false);
-  $("selFilterPersonel").innerHTML = opt(true);
+  const optBase = [];
+  const optFilter = [`<option value="">(Hepsi)</option>`];
 
+  if(!personeller.length){
+    optBase.push(`<option value="" disabled selected>Personel yok</option>`);
+    optFilter.push(`<option value="" disabled>Personel yok</option>`);
+  }else{
+    for(const p of personeller){
+      const id = p[COL_PERSONEL_ID];
+      const name = (p[COL_PERSONEL_NAME] || "").trim();
+      const label = name ? name : id;
+      optBase.push(`<option value="${escapeHtml(String(id))}">${escapeHtml(label)}</option>`);
+      optFilter.push(`<option value="${escapeHtml(String(id))}">${escapeHtml(label)}</option>`);
+    }
+  }
+
+  $("selPersonel").innerHTML = optBase.join("");
+  $("selFilterPersonel").innerHTML = optFilter.join("");
+
+  // eski seçimi geri bas
   try{
     const f = JSON.parse(localStorage.getItem(STORAGE.LAST_FILTERS) || "{}");
     if(f.p) $("selFilterPersonel").value = f.p;
   }catch{}
 }
 
-async function loadPersonel(force=false){
-  const cacheOk = !force && localStorage.getItem(STORAGE.CACHE_PERSONEL);
-  if(cacheOk){
-    try{
-      personelList = JSON.parse(localStorage.getItem(STORAGE.CACHE_PERSONEL)) || [];
-      fillPersonelSelects();
-      return;
-    }catch{}
-  }
-  if(!supa){
-    personelList = [];
-    fillPersonelSelects();
-    return;
-  }
-
-  // kolon bilinmese bile * çekiyoruz
-  const { data, error } = await supa.from(TBL_PERSONEL).select("*").limit(LIMIT);
-  if(error){
-    toast("Personel", error.message);
-    personelList = [];
-  }else{
-    personelList = data || [];
-    localStorage.setItem(STORAGE.CACHE_PERSONEL, JSON.stringify(personelList));
-  }
-
-  // hala pname yoksa, ilk satırdan tekrar dene
-  if(!COLS.pname && personelList[0]){
-    COLS.pname = guessKeyFromRow(personelList[0], {
-      exclude:["id","created_at","updated_at"],
-      preferIncludes:["ad","isim","name","soyad","full","kisi","personel"],
-      avoidIncludes:["id","_id","uuid"]
-    });
-    $("colsInfo").textContent =
-      `Kolonlar: hareket(${COLS.hdate||"?"}/${COLS.htype||"?"}/${COLS.hnote||"?"}) personel(${COLS.pname||"?"})`;
-  }
-
+async function loadPersoneller(){
+  const { data, error } = await supa.from(TBL_PERSONEL).select("*").order(COL_PERSONEL_NAME, { ascending:true }).limit(LIMIT);
+  if(error) throw error;
+  personeller = data || [];
   fillPersonelSelects();
 }
 
-function clearForm(){
-  $("inpDT").value="";
-  $("selTip").value="GIRIS";
-  $("inpEtiket").value="";
-  $("inpNot").value="";
-}
-
-function isAdmin(){ return localStorage.getItem(STORAGE.ADMIN_OK)==="1"; }
-
-async function saveHareket(){
-  if(!supa) return toast("Supabase", "Bağlantı yok. URL/KEY doldur.");
-  if(!COLS.hpid) return toast("Kolon", "personel_id benzeri kolon bulunamadı.");
-
-  const pid = $("selPersonel").value;
-  if(!pid) return toast("Eksik", "Personel seç.");
-
-  const tur = $("selTip").value;
-  const etiket = $("inpEtiket").value.trim();
-  const notRaw = $("inpNot").value.trim();
-  const not = (etiket ? `#${etiket} ` : "") + (notRaw || "");
-
-  const dt = $("inpDT").value;
-  const tarihIso = dt ? new Date(dt).toISOString() : new Date().toISOString();
-
-  const payload = { [COLS.hpid]: pid };
-
-  if(COLS.htype) payload[COLS.htype] = tur;
-  else if(COLS.hnote) payload[COLS.hnote] = `[${tur}] ` + not;
-
-  if(COLS.hnote) payload[COLS.hnote] = not || null;
-  if(COLS.hdate) payload[COLS.hdate] = tarihIso;
-
-  $("btnKaydet").disabled = true;
-  try{
-    const { error } = await supa.from(TBL_HAREKET).insert(payload);
-    if(error) throw error;
-    toast("Kayıt", "Kaydedildi ✅");
-    clearForm();
-    await applyFilters(true);
-  }catch(e){
-    toast("Hata", e.message);
-    setStatus("Kayıt hatası", false);
-  }finally{
-    $("btnKaydet").disabled = false;
-  }
-}
-
-async function applyFilters(force=false){
-  saveFiltersToStorage();
-  if(!supa){ rows=[]; renderTable(); return setStatus("Supabase ayarı yok", false); }
-
-  const q = $("inpAra").value.trim().toLowerCase();
-  const personelFilter = $("selFilterPersonel").value || "";
+async function loadHareketler(){
+  const q = ($("inpAra").value || "").trim().toLowerCase();
+  const pidFilter = $("selFilterPersonel").value || "";
   const start = $("inpStart").value;
   const end = $("inpEnd").value;
 
-  if(force){
-    await detectColumnsV2();
-    await loadPersonel(true);
-  }
+  let query = supa.from(TBL_HAREKET).select("*").limit(LIMIT).order(COL_H_DATE, {ascending:false});
 
-  const pmap = new Map(personelList.map(p=>{
-    const id = COLS.pid ? p[COLS.pid] : (p.id || "");
-    const name = COLS.pname ? (p[COLS.pname] || "") : "";
-    return [id, name || id || ""];
-  }));
+  const sIso = startOfDayISO(start);
+  const eIso = endOfDayISO(end);
+  if(sIso) query = query.gte(COL_H_DATE, sIso);
+  if(eIso) query = query.lte(COL_H_DATE, eIso);
+  if(pidFilter) query = query.eq(COL_H_PID, pidFilter);
 
-  let query = supa.from(TBL_HAREKET).select("*").limit(LIMIT);
+  const { data, error } = await query;
+  if(error) throw error;
 
-  if(COLS.hdate){
-    const sIso = startOfDayISO(start);
-    const eIso = endOfDayISO(end);
-    if(sIso) query = query.gte(COLS.hdate, sIso);
-    if(eIso) query = query.lte(COLS.hdate, eIso);
-    query = query.order(COLS.hdate, {ascending:false});
-  }else if(COLS.hid){
-    query = query.order(COLS.hid, {ascending:false});
-  }
+  const raw = data || [];
 
-  if(personelFilter && COLS.hpid) query = query.eq(COLS.hpid, personelFilter);
+  // personel id->ad
+  const pmap = new Map(personeller.map(p => [p[COL_PERSONEL_ID], (p[COL_PERSONEL_NAME]||"").trim()]));
 
-  $("btnUygula").disabled = true;
-  $("btnSifirla").disabled = true;
+  // arama: personel adı + not + tür
+  hareketler = q ? raw.filter(r=>{
+    const pid = r[COL_H_PID];
+    const ad = (pmap.get(pid) || "").toLowerCase();
+    const note = ((r[COL_H_NOTE] || "") + "").toLowerCase();
+    const tur  = ((r[COL_H_TUR]  || "") + "").toLowerCase();
+    return ad.includes(q) || note.includes(q) || tur.includes(q);
+  }) : raw;
 
-  try{
-    const { data, error } = await query;
-    if(error) throw error;
-
-    const raw = data || [];
-
-    rows = q ? raw.filter(r=>{
-      const ad = (pmap.get(r[COLS.hpid]) || "").toLowerCase();
-      const note = (COLS.hnote ? (r[COLS.hnote] || "") : "").toLowerCase();
-      const type = (COLS.htype ? (r[COLS.htype] || "") : "").toLowerCase();
-      return ad.includes(q) || note.includes(q) || type.includes(q);
-    }) : raw;
-
-    renderTable(pmap);
-    setStatus("Hazır", true);
-  }catch(e){
-    toast("Hata", e.message);
-    setStatus("Listeleme hatası", false);
-  }finally{
-    $("btnUygula").disabled = false;
-    $("btnSifirla").disabled = false;
-  }
+  $("countPill").textContent = `${hareketler.length} kayıt`;
 }
 
-function renderTable(pmap){
-  const total = rows.length;
-  $("countPill").textContent = `${total} kayıt`;
-
+function renderTable(){
+  const pmap = new Map(personeller.map(p => [p[COL_PERSONEL_ID], (p[COL_PERSONEL_NAME]||"").trim()]));
+  const total = hareketler.length;
   const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
   if(page > maxPage) page = maxPage;
   $("pageInfo").textContent = `${page} / ${maxPage}`;
 
-  const startIdx = (page-1)*PAGE_SIZE;
-  const slice = rows.slice(startIdx, startIdx+PAGE_SIZE);
+  const startIdx = (page-1) * PAGE_SIZE;
+  const slice = hareketler.slice(startIdx, startIdx + PAGE_SIZE);
+
+  const canAdmin = isAdmin();
 
   const html = slice.map(r=>{
-    const id = COLS.hid ? (r[COLS.hid] ?? "") : "";
-    const pid = COLS.hpid ? (r[COLS.hpid] ?? "") : "";
-    const ad = (pmap && pmap.get(pid)) ? pmap.get(pid) : (pid || "—");
-    const tip = COLS.htype ? (r[COLS.htype] || "—") : "—";
-    const not = COLS.hnote ? (r[COLS.hnote] || "") : "";
-    const t = COLS.hdate ? (r[COLS.hdate] || "") : "";
+    const id = r[COL_H_ID];
+    const pid = r[COL_H_PID];
+    const ad = pmap.get(pid) || pid || "—";
+    const tur = r[COL_H_TUR] || "—";
+    const note = r[COL_H_NOTE] || "";
+    const dt = r[COL_H_DATE] || "";
+
+    const btns = canAdmin
+      ? `<button class="btn secondary mini" onclick="window.__pickRow('${escapeHtml(String(id))}')">Seç</button>
+         <button class="btn danger mini" onclick="window.__deleteRow('${escapeHtml(String(id))}')">Sil</button>`
+      : `<button class="btn secondary mini" disabled>Seç</button>
+         <button class="btn danger mini" disabled>Sil</button>`;
+
     return `
       <tr data-id="${escapeHtml(String(id))}">
-        <td>${escapeHtml(fmtDT(t))}</td>
+        <td>${escapeHtml(fmtDT(dt))}</td>
         <td>${escapeHtml(ad)}</td>
-        <td>${escapeHtml(tip)}</td>
-        <td>${escapeHtml(not)}</td>
-        <td class="right">
-          <button class="btn secondary mini" onclick="window.__pickRow('${escapeHtml(String(id))}')">Seç</button>
-          <button class="btn danger mini" onclick="window.__deleteRow('${escapeHtml(String(id))}')">Sil</button>
-        </td>
+        <td>${escapeHtml(String(tur))}</td>
+        <td>${escapeHtml(String(note))}</td>
+        <td class="right">${btns}</td>
       </tr>
     `;
   }).join("");
@@ -658,244 +615,307 @@ function renderTable(pmap){
   $("tbody").innerHTML = html || `<tr><td colspan="5" class="muted">Kayıt yok.</td></tr>`;
 }
 
-window.__pickRow = (id)=>{ selectedRowId = id; toast("Seçildi", "Satır seçildi ✅"); };
-window.__deleteRow = async (id)=>{ if(!isAdmin()) return toast("Yetki","Silmek için Admin girişi gerekli."); await deleteRow(id); };
+window.__pickRow = (id)=>{
+  selectedRowId = id;
+  toast("Seçildi", "Satır seçildi ✅");
+};
+
+window.__deleteRow = async (id)=>{
+  if(!isAdmin()) return toast("Yetki", "Silmek için Admin girişi gerekli.");
+  await deleteRow(id);
+};
 
 async function deleteRow(id){
-  if(!supa) return toast("Supabase","Bağlantı yok.");
-  if(!id) return toast("Sil","Satır id yok.");
-  if(!COLS.hid) return toast("Kolon","id kolonu bulunamadı.");
-
   if(!confirm("Bu satır silinsin mi?")) return;
+  const { error } = await supa.from(TBL_HAREKET).delete().eq(COL_H_ID, id);
+  if(error) return toast("Hata", error.message);
+  toast("Sil", "Silindi ✅");
+  selectedRowId = null;
+  await refreshAll(true);
+}
+
+/* =========================
+   KAYDET / FORM
+========================= */
+function clearForm(){
+  $("inpDT").value = "";
+  $("selTur").value = "giris";
+  $("inpEtiket").value = "";
+  $("inpNot").value = "";
+}
+
+async function saveHareket(){
+  const pid = $("selPersonel").value;
+  if(!pid) return toast("Eksik", "Personel seç.");
+
+  const dt = $("inpDT").value;
+  const iso = dt ? new Date(dt).toISOString() : new Date().toISOString();
+
+  const tur = $("selTur").value;
+  const etiket = ($("inpEtiket").value || "").trim();
+  const noteRaw = ($("inpNot").value || "").trim();
+  const note = (etiket ? ("#" + etiket + " ") : "") + (noteRaw || "");
+
+  const payload = {
+    [COL_H_PID]: pid,
+    [COL_H_DATE]: iso,
+    [COL_H_TUR]: tur,
+    [COL_H_NOTE]: note || null
+  };
+
+  $("btnKaydet").disabled = true;
   try{
-    const { error } = await supa.from(TBL_HAREKET).delete().eq(COLS.hid, id);
+    const { error } = await supa.from(TBL_HAREKET).insert(payload);
     if(error) throw error;
-    toast("Sil","Silindi ✅");
-    selectedRowId=null;
-    await applyFilters(true);
+    toast("Kayıt", "Kaydedildi ✅");
+    clearForm();
+    await refreshAll(true);
   }catch(e){
-    toast("Hata", e.message);
+    toast("Hata", e.message || String(e));
+    setStatus("Kayıt hatası", false);
+  }finally{
+    $("btnKaydet").disabled = false;
   }
 }
 
-function openAdmin(show){
-  const m = $("adminModal");
-  if(show){
-    m.classList.add("show");
-    const ok = isAdmin();
-    $("adminLocked").classList.toggle("hide", ok);
-    $("adminUnlocked").classList.toggle("hide", !ok);
-    $("pinTry").textContent = String(pinTry);
-  }else m.classList.remove("show");
-}
-function adminLogin(){
-  const pin = $("adminPin").value || "";
-  const real = localStorage.getItem(STORAGE.ADMIN_PIN) || "";
-  if(!real){ pinTry++; $("pinTry").textContent=String(pinTry); return toast("Admin","ADMIN_PIN ayarlı değil."); }
-  if(pin===real){
-    localStorage.setItem(STORAGE.ADMIN_OK,"1");
-    $("adminPin").value="";
-    toast("Admin","Giriş başarılı ✅");
-    openAdmin(true);
-  }else{
-    pinTry++; $("pinTry").textContent=String(pinTry);
-    toast("Admin","PIN yanlış.");
-  }
-}
-function adminLogout(){
-  localStorage.removeItem(STORAGE.ADMIN_OK);
-  toast("Admin","Çıkış yapıldı.");
-  openAdmin(true);
-}
-
+/* =========================
+   ADMIN: PERSONEL
+========================= */
 async function addPersonel(){
-  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
-  if(!supa) return toast("Supabase","Bağlantı yok.");
+  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
+  const name = ($("inpNewPersonel").value || "").trim();
+  if(!name) return toast("Eksik", "Personel adı yaz.");
 
-  const ad = $("inpNewPersonel").value.trim();
-  if(!ad) return toast("Eksik","Personel adı yaz.");
+  const { error } = await supa.from(TBL_PERSONEL).insert({ [COL_PERSONEL_NAME]: name });
+  if(error) return toast("Hata", error.message);
 
-  // pname yoksa bile row’dan tahmin etmeye çalışacağız, ama insert için kolona ihtiyaç var
-  if(!COLS.pname){
-    toast("Kolon", "Personel ad kolonu bulunamadı. Personeller tablosundaki ad kolonunu tespit edemedim.");
-    return;
-  }
-
-  try{
-    const payload = { [COLS.pname]: ad };
-    const { error } = await supa.from(TBL_PERSONEL).insert(payload);
-    if(error) throw error;
-    $("inpNewPersonel").value="";
-    toast("Personel","Eklendi ✅");
-    await applyFilters(true);
-  }catch(e){
-    toast("Hata", e.message);
-  }
+  $("inpNewPersonel").value = "";
+  toast("Personel", "Eklendi ✅");
+  await refreshAll(true);
 }
 
-async function delPersonel(){
-  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
-  if(!supa) return toast("Supabase","Bağlantı yok.");
-  if(!COLS.pid) return toast("Kolon","Personel id kolonu bulunamadı.");
+async function delSelectedPersonel(){
+  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
+  const pid = $("selPersonel").value;
+  if(!pid) return toast("Eksik", "Silmek için personel seç.");
 
-  const id = $("selPersonel").value;
-  if(!id) return toast("Eksik","Silmek için personel seç.");
   if(!confirm("Seçili personel silinsin mi?")) return;
 
-  try{
-    const { error } = await supa.from(TBL_PERSONEL).delete().eq(COLS.pid, id);
-    if(error) throw error;
-    toast("Personel","Silindi ✅");
-    await applyFilters(true);
-  }catch(e){
-    toast("Hata", e.message);
-  }
+  const { error } = await supa.from(TBL_PERSONEL).delete().eq(COL_PERSONEL_ID, pid);
+  if(error) return toast("Hata", error.message);
+
+  toast("Personel", "Silindi ✅");
+  await refreshAll(true);
 }
 
+/* =========================
+   YEDEK / GERİ YÜKLE
+========================= */
 async function backupJSON(){
-  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
-  if(!supa) return toast("Supabase","Bağlantı yok.");
+  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
 
   try{
-    toast("Yedek","Çekiliyor…");
     const { data: p, error: ep } = await supa.from(TBL_PERSONEL).select("*").limit(LIMIT);
     if(ep) throw ep;
+
     const { data: h, error: eh } = await supa.from(TBL_HAREKET).select("*").limit(LIMIT);
     if(eh) throw eh;
 
-    const payload = { meta:{ createdAt:new Date().toISOString(), limit:LIMIT, cols:COLS }, personeller:p||[], hareketler:h||[] };
-    const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download=`personel_takip_yedek_${new Date().toISOString().slice(0,10)}.json`;
+    // hareketlere personel adı da ekleyelim (geri yüklemede kolay)
+    const pmap = new Map((p||[]).map(x => [x[COL_PERSONEL_ID], (x[COL_PERSONEL_NAME]||"").trim()]));
+    const h2 = (h||[]).map(r => ({
+      id: r[COL_H_ID],
+      created_at: r[COL_H_DATE],
+      tur: r[COL_H_TUR],
+      not_text: r[COL_H_NOTE],
+      personel_id: r[COL_H_PID],
+      personel_ad: pmap.get(r[COL_H_PID]) || ""
+    }));
+
+    const out = {
+      meta: { createdAt: new Date().toISOString(), limit: LIMIT },
+      personeller: (p||[]).map(x => ({ id: x[COL_PERSONEL_ID], ad_soyad: x[COL_PERSONEL_NAME] })),
+      hareketler: h2
+    };
+
+    const blob = new Blob([JSON.stringify(out,null,2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "personel_takip_yedek_" + new Date().toISOString().slice(0,10) + ".json";
     a.click();
-    toast("Yedek","JSON indirildi ✅");
+    toast("Yedek", "JSON indirildi ✅");
   }catch(e){
-    toast("Hata", e.message);
+    toast("Hata", e.message || String(e));
   }
 }
 
 async function restoreJSON(evt){
-  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
-  const file = evt.target.files?.[0]; evt.target.value="";
+  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
+  const file = evt.target.files?.[0];
+  evt.target.value = "";
   if(!file) return;
-  if(!supa) return toast("Supabase","Bağlantı yok.");
 
   try{
     const json = JSON.parse(await file.text());
     const p = Array.isArray(json.personeller) ? json.personeller : [];
     const h = Array.isArray(json.hareketler) ? json.hareketler : [];
+
+    // mevcut personelleri çek
+    await loadPersoneller();
+    const byName = new Map(personeller.map(x => [((x[COL_PERSONEL_NAME]||"").trim().toLowerCase()), x[COL_PERSONEL_ID]]));
+
     let okP=0, skipP=0, okH=0, skipH=0;
 
-    toast("Geri Yükle","Yükleniyor…");
+    // personel ekle (adı yoksa atla)
+    for(const item of p){
+      const name = (item.ad_soyad || "").trim();
+      if(!name){ skipP++; continue; }
 
-    if(COLS.pname){
-      for(const item of p){
-        const nameVal = item[COLS.pname] || item.ad || item.name || item.isim || item.adi;
-        if(!nameVal) { skipP++; continue; }
-        const { error } = await supa.from(TBL_PERSONEL).insert({ [COLS.pname]: nameVal });
-        if(error) skipP++; else okP++;
-        if(okP+skipP>=LIMIT) break;
-      }
-    }else{
-      skipP = p.length;
+      const key = name.toLowerCase();
+      if(byName.has(key)){ skipP++; continue; }
+
+      const { error } = await supa.from(TBL_PERSONEL).insert({ [COL_PERSONEL_NAME]: name });
+      if(error){ skipP++; }
+      else { okP++; }
+
+      if(okP + skipP >= LIMIT) break;
     }
 
-    await applyFilters(true);
+    // tekrar çek ve map güncelle
+    await loadPersoneller();
+    const byName2 = new Map(personeller.map(x => [((x[COL_PERSONEL_NAME]||"").trim().toLowerCase()), x[COL_PERSONEL_ID]]));
 
-    // hareket restore: kolon varsa doldur, yoksa atla
+    // hareket ekle (id göndermeden insert)
     for(const item of h){
-      let pid = item[COLS.hpid] || item.personel_id || item.personelId || null;
+      let pid = item.personel_id || null;
+      const ad = (item.personel_ad || "").trim().toLowerCase();
+
+      if(!pid && ad && byName2.has(ad)) pid = byName2.get(ad);
       if(!pid){ skipH++; continue; }
 
-      const payload = { [COLS.hpid]: pid };
-
-      const tval = item[COLS.htype] || item.tur || item.tip || item.type || "NOT";
-      const nval = item[COLS.hnote] || item.not || item.aciklama || item.note || null;
-      const dval = item[COLS.hdate] || item.tarih || item.created_at || new Date().toISOString();
-
-      if(COLS.htype) payload[COLS.htype] = tval;
-      if(COLS.hnote) payload[COLS.hnote] = nval;
-      if(COLS.hdate) payload[COLS.hdate] = dval;
+      const payload = {
+        [COL_H_PID]: pid,
+        [COL_H_DATE]: item.created_at || new Date().toISOString(),
+        [COL_H_TUR]: item.tur || "not",
+        [COL_H_NOTE]: item.not_text || null
+      };
 
       const { error } = await supa.from(TBL_HAREKET).insert(payload);
-      if(error) skipH++; else okH++;
-      if(okH+skipH>=LIMIT) break;
+      if(error){ skipH++; }
+      else { okH++; }
+
+      if(okH + skipH >= LIMIT) break;
     }
 
     $("restoreReport").textContent = `Personel: +${okP} (atla:${skipP}) | Hareket: +${okH} (atla:${skipH})`;
-    toast("Geri Yükle","Bitti ✅");
-    await applyFilters(true);
+    toast("Geri Yükle", "Bitti ✅");
+    await refreshAll(true);
   }catch(e){
-    toast("Hata", e.message);
+    toast("Hata", e.message || String(e));
   }
 }
 
+/* =========================
+   EXCEL
+========================= */
 function exportXLSX(){
+  if(!hareketler.length) return toast("Excel", "Kayıt yok.");
+
+  const pmap = new Map(personeller.map(p => [p[COL_PERSONEL_ID], (p[COL_PERSONEL_NAME]||"").trim()]));
+
+  const data = hareketler.slice(0, LIMIT).map(r => ({
+    "Tarih": fmtDT(r[COL_H_DATE]),
+    "Personel": pmap.get(r[COL_H_PID]) || r[COL_H_PID] || "",
+    "Tür": r[COL_H_TUR] || "",
+    "Not": r[COL_H_NOTE] || ""
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Hareketler");
+  XLSX.writeFile(wb, "personel_hareketleri_" + new Date().toISOString().slice(0,10) + ".xlsx");
+  toast("Excel", "XLSX indirildi ✅");
+}
+
+/* =========================
+   REFRESH
+========================= */
+async function refreshAll(showToast){
+  saveFiltersToStorage();
+
+  $("btnSync").disabled = true;
+  $("btnUygula").disabled = true;
+  $("btnSifirla").disabled = true;
+
   try{
-    if(!rows.length) return toast("Excel","Kayıt yok.");
-    const pmap = new Map(personelList.map(p=>{
-      const id = COLS.pid ? p[COLS.pid] : (p.id || "");
-      const name = COLS.pname ? (p[COLS.pname] || "") : "";
-      return [id, name || id || ""];
-    }));
-
-    const data = rows.slice(0, LIMIT).map(r=>({
-      "Tarih": COLS.hdate ? fmtDT(r[COLS.hdate]) : "",
-      "Personel": pmap.get(r[COLS.hpid]) || (r[COLS.hpid] || ""),
-      "Tür": COLS.htype ? (r[COLS.htype] || "") : "",
-      "Not": COLS.hnote ? (r[COLS.hnote] || "") : ""
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Hareketler");
-    XLSX.writeFile(wb, `personel_hareketleri_${new Date().toISOString().slice(0,10)}.xlsx`);
-    toast("Excel","XLSX indirildi ✅");
+    await loadPersoneller();
+    await loadHareketler();
+    renderTable();
+    setStatus("Hazır", true);
+    if(showToast) toast("Senkron", "Güncellendi ✅");
   }catch(e){
-    toast("Hata", e.message);
+    setStatus("Hata", false);
+    toast("Hata", e.message || String(e));
+  }finally{
+    $("btnSync").disabled = false;
+    $("btnUygula").disabled = false;
+    $("btnSifirla").disabled = false;
   }
 }
 
+/* =========================
+   EVENTS + INIT
+========================= */
 function wire(){
+  $("limitPill").textContent = String(LIMIT);
+
   $("btnKaydet").addEventListener("click", saveHareket);
   $("btnTemizle").addEventListener("click", clearForm);
-  $("btnUygula").addEventListener("click", async()=>{ page=1; await applyFilters(); });
-  $("btnSifirla").addEventListener("click", async()=>{ resetFilters(); page=1; await applyFilters(); });
-  $("btnPrev").addEventListener("click", ()=>{ if(page>1){ page--; renderTable(new Map()); } });
+
+  $("btnUygula").addEventListener("click", async()=>{ page=1; await refreshAll(false); });
+  $("btnSifirla").addEventListener("click", async()=>{
+    $("inpAra").value = "";
+    $("inpStart").value = "";
+    $("inpEnd").value = "";
+    $("selFilterPersonel").value = "";
+    page=1;
+    await refreshAll(false);
+  });
+
+  $("btnPrev").addEventListener("click", ()=>{ if(page>1){ page--; renderTable(); } });
   $("btnNext").addEventListener("click", ()=>{
-    const maxPage = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-    if(page < maxPage){ page++; renderTable(new Map()); }
+    const maxPage = Math.max(1, Math.ceil(hareketler.length / PAGE_SIZE));
+    if(page < maxPage){ page++; renderTable(); }
   });
-  $("btnSync").addEventListener("click", async()=>{
-    toast("Senkron","Sunucudan çekiliyor…");
-    await applyFilters(true);
-  });
+
+  $("btnSync").addEventListener("click", async()=>{ await refreshAll(true); });
   $("btnExport").addEventListener("click", exportXLSX);
 
   $("btnAdmin").addEventListener("click", ()=>openAdmin(true));
   $("btnAdminClose").addEventListener("click", ()=>openAdmin(false));
+
   $("btnAdminLogin").addEventListener("click", adminLogin);
   $("btnAdminLogout").addEventListener("click", adminLogout);
 
   $("btnAddPersonel").addEventListener("click", addPersonel);
-  $("btnDelPersonel").addEventListener("click", delPersonel);
+  $("btnDelPersonel").addEventListener("click", delSelectedPersonel);
 
   $("btnBackup").addEventListener("click", backupJSON);
   $("fileRestore").addEventListener("change", restoreJSON);
 
-  $("btnDeleteRow").addEventListener("click", ()=>{
-    if(!selectedRowId) return toast("Sil","Önce listeden bir satır seç.");
-    deleteRow(selectedRowId);
+  $("btnDeleteRow").addEventListener("click", async()=>{
+    if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
+    if(!selectedRowId) return toast("Sil", "Önce listeden bir satır seç.");
+    await deleteRow(selectedRowId);
+  });
+
+  $("inpAra").addEventListener("keydown", async(e)=>{
+    if(e.key === "Enter"){ page=1; await refreshAll(false); }
   });
 
   $("tbody").addEventListener("click",(e)=>{
     const tr = e.target.closest("tr"); if(!tr) return;
     selectedRowId = tr.getAttribute("data-id") || null;
-  });
-
-  $("inpAra").addEventListener("keydown", async(e)=>{
-    if(e.key==="Enter"){ page=1; await applyFilters(); }
   });
 }
 
@@ -906,18 +926,17 @@ function wire(){
   try{
     if(SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON.includes("YOUR_")){
       setStatus("Supabase ayarı yok", false);
-      toast("Ayar","SUPABASE_URL ve SUPABASE_ANON doldur.");
+      toast("Ayar", "SUPABASE_URL ve SUPABASE_ANON doldur.");
       return;
     }
+
     supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     setStatus("Bağlantı hazır", true);
 
-    await detectColumnsV2();
-    await loadPersonel();
-    await applyFilters();
+    await refreshAll(false);
   }catch(e){
     setStatus("Başlatma hatası", false);
-    toast("Hata", e.message);
+    toast("Hata", e.message || String(e));
   }
 })();
 </script>
