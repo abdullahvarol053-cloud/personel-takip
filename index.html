@@ -3,20 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Personel Takip (FINAL Temizleme - Beyaz)</title>
-
-  <!-- ✅ Tek dosya / Not defteri gibi -->
-  <!-- ✅ 5000 limit (listeleme + export) -->
-  <!-- ✅ Arama: personel + not -->
-  <!-- ✅ Tarih filtresi net (başlangıç-bitiş, gün sonu dahil) -->
-  <!-- ✅ Koyu tema yok: Beyaz tema -->
-  <!-- ✅ DB kolon uyumu: tip yerine tur -->
+  <title>Personel Takip (FINAL - Auto Kolon + Beyaz)</title>
 
   <style>
     :root{
       --bg:#f6f8fc;
       --card:#ffffff;
-      --card2:#fbfcff;
       --txt:#0f172a;
       --muted:#64748b;
       --line:rgba(15,23,42,.10);
@@ -28,174 +20,50 @@
       --radius:14px;
       --shadow: 0 10px 30px rgba(15,23,42,.08);
     }
-
     *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:var(--bg);
-      color:var(--txt);
-    }
-
-    header{
-      position:sticky;
-      top:0;
-      z-index:10;
-      background:rgba(255,255,255,.85);
-      border-bottom:1px solid var(--line);
-      backdrop-filter: blur(10px);
-    }
-
-    .wrap{max-width:1100px; margin:0 auto; padding:14px 14px}
-    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--txt)}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.88);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .spacer{flex:1}
-    h1{margin:0; font-size:16px; letter-spacing:.2px}
-
-    .pill{
-      padding:6px 10px;
-      border:1px solid var(--line);
-      border-radius:999px;
-      color:var(--muted);
-      font-size:12px;
-      background:rgba(15,23,42,.02);
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:12px;
-    }
-    @media (max-width: 980px){
-      .grid{grid-template-columns: 1fr}
-    }
-
-    .card{
-      background:linear-gradient(180deg, var(--card), var(--card2));
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:12px;
-      box-shadow: var(--shadow);
-    }
-
-    .card h2{margin:0 0 10px; font-size:14px}
-    .muted{color:var(--muted); font-size:12px}
-
-    label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
-
-    input, select, textarea{
-      width:100%;
-      padding:10px 10px;
-      border-radius:12px;
-      border:1px solid rgba(15,23,42,.14);
-      background:#fff;
-      color:var(--txt);
-      outline:none;
-    }
-    input:focus, select:focus, textarea:focus{
-      border-color: rgba(37,99,235,.55);
-      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
-    }
-
-    textarea{min-height:88px; resize:vertical}
-
-    .btn{
-      appearance:none;
-      border:0;
-      cursor:pointer;
-      padding:10px 12px;
-      border-radius:12px;
-      color:white;
-      background:var(--btn);
-      font-weight:700;
-      font-size:13px;
-    }
-    .btn.secondary{
-      background:var(--btn2);
-      border:1px solid rgba(37,99,235,.20);
-      color:#1e40af;
-    }
+    h1{margin:0;font-size:16px}
+    .pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:12px;background:rgba(15,23,42,.02)}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,var(--card),#fbfcff);border:1px solid var(--line);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow)}
+    .card h2{margin:0 0 10px;font-size:14px}
+    .muted{color:var(--muted);font-size:12px}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input,select,textarea{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(15,23,42,.14);background:#fff;color:var(--txt);outline:none}
+    input:focus,select:focus,textarea:focus{border-color:rgba(37,99,235,.55);box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+    textarea{min-height:88px;resize:vertical}
+    .btn{border:0;cursor:pointer;padding:10px 12px;border-radius:12px;color:white;background:var(--btn);font-weight:800;font-size:13px}
+    .btn.secondary{background:var(--btn2);border:1px solid rgba(37,99,235,.20);color:#1e40af}
     .btn.danger{background:var(--danger)}
     .btn.ok{background:var(--ok)}
-    .btn:disabled{opacity:.55; cursor:not-allowed}
-
-    .mini{font-size:12px; padding:8px 10px; border-radius:10px}
-    .hr{height:1px; background:var(--line); margin:10px 0}
-
-    .table{
-      width:100%;
-      border-collapse: collapse;
-      overflow:hidden;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:#fff;
-    }
-    .table th, .table td{
-      padding:10px 10px;
-      border-bottom:1px solid rgba(15,23,42,.08);
-      font-size:12px;
-      vertical-align:top;
-    }
-    .table th{
-      color:#0f172a;
-      text-align:left;
-      font-weight:800;
-      background:rgba(15,23,42,.03)
-    }
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .mini{font-size:12px;padding:8px 10px;border-radius:10px}
+    .hr{height:1px;background:var(--line);margin:10px 0}
+    .table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#fff}
+    .table th,.table td{padding:10px;border-bottom:1px solid rgba(15,23,42,.08);font-size:12px;vertical-align:top}
+    .table th{font-weight:900;background:rgba(15,23,42,.03);text-align:left}
     .table tr:hover td{background:rgba(37,99,235,.04)}
     .right{text-align:right}
-
-    .tag{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:5px 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      font-size:12px;
-      color:var(--muted);
-      background:rgba(15,23,42,.02)
-    }
-    .dot{width:8px; height:8px; border-radius:50%}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);background:rgba(15,23,42,.02)}
+    .dot{width:8px;height:8px;border-radius:50%}
     .dot.ok{background:var(--ok)}
     .dot.warn{background:var(--warn)}
     .dot.err{background:var(--danger)}
-
-    .toast{
-      position:fixed;
-      left:50%;
-      bottom:18px;
-      transform:translateX(-50%);
-      background:#ffffff;
-      border:1px solid var(--line);
-      padding:10px 12px;
-      border-radius:14px;
-      box-shadow: 0 18px 60px rgba(15,23,42,.15);
-      display:none;
-      max-width:min(92vw, 780px);
-      z-index:99;
-    }
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#fff;border:1px solid var(--line);padding:10px 12px;border-radius:14px;box-shadow:0 18px 60px rgba(15,23,42,.15);display:none;max-width:min(92vw,780px);z-index:99}
     .toast.show{display:block}
     .toast b{font-size:13px}
-
-    .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size:11px;
-      padding:2px 6px;
-      border-radius:8px;
-      border:1px solid var(--line);
-      background:rgba(15,23,42,.02);
-      color:#0f172a;
-    }
-
-    .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-    @media (max-width:700px){ .two{grid-template-columns:1fr} }
-    .hide{display:none !important}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;padding:2px 6px;border-radius:8px;border:1px solid var(--line);background:rgba(15,23,42,.02);color:#0f172a}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:700px){.two{grid-template-columns:1fr}}
+    .hide{display:none!important}
   </style>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- XLSX Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
@@ -207,18 +75,16 @@
       <span class="pill" id="statusPill">Durum: —</span>
       <span class="pill">Limit: <b>5000</b></span>
       <div class="spacer"></div>
-
       <button class="btn secondary mini" id="btnSync">Sunucudan Senkronize Et</button>
       <button class="btn secondary mini" id="btnAdmin">Admin</button>
     </div>
-
     <div class="row" style="margin-top:8px">
       <span class="muted">
         Arama: <span class="kbd">personel</span> + <span class="kbd">not</span> |
         Tarih: <span class="kbd">başlangıç</span>–<span class="kbd">bitiş</span> (gün sonu dahil)
       </span>
       <div class="spacer"></div>
-      <span class="muted">Cihaz değiştiyse: Admin → “Geri Yükle” kullanın.</span>
+      <span class="muted" id="colsInfo">Kolonlar: —</span>
     </div>
   </div>
 </header>
@@ -226,7 +92,6 @@
 <main class="wrap">
   <div class="grid">
 
-    <!-- SOL: Kayıt -->
     <section class="card">
       <h2>Yeni Hareket</h2>
 
@@ -255,7 +120,7 @@
         <div>
           <label>Etiket (opsiyonel)</label>
           <input id="inpEtiket" placeholder="örn: Servis / Geç / İzin" />
-          <div class="muted" style="margin-top:6px">Etiket DB’de ayrı kolon istemez, not içine eklenir.</div>
+          <div class="muted" style="margin-top:6px">Etiket not içine eklenir.</div>
         </div>
       </div>
 
@@ -309,7 +174,6 @@
       </div>
     </section>
 
-    <!-- SAĞ: Liste -->
     <section class="card">
       <div class="row">
         <h2 style="margin:0">Hareketler</h2>
@@ -423,10 +287,10 @@
 
 <script>
 /* =========================
-   🔧 AYARLAR (tek yer)
+   🔧 AYARLAR
 ========================= */
-const LIMIT = 5000;              // ✅ 5000 limit işi
-const PAGE_SIZE = 100;           // liste sayfa boyu
+const LIMIT = 5000;
+const PAGE_SIZE = 100;
 
 // ✅ Supabase Config (BURAYI DOLDUR)
 const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
@@ -436,64 +300,64 @@ const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const TBL_PERSONEL = "personeller";
 const TBL_HAREKET  = "hareketler";
 
-// ✅ KOLON AYARLARI (senin DB farklıysa burada düzelt)
-// EKRANDAKİ HATA: "hareketler.tip yok" -> biz "tur" yaptık
-const COL_ID      = "id";
-const COL_PID     = "personel_id";
-const COL_TYPE    = "tur";     // eskiden tip
-const COL_NOTE    = "not";
-const COL_DATE    = "tarih";
+// ✅ Kolon adayları (AUTO bulacak)
+const CAND = {
+  hareket: {
+    id:   ["id"],
+    pid:  ["personel_id","personelId","pid","personel_uuid","personel"],
+    type: ["tur","tip","type","islem","hareket_turu"],
+    note: ["not","aciklama","note","mesaj","yorum"],
+    date: ["tarih","created_at","createdAt","zaman","datetime","tarih_saat","ts"]
+  },
+  personel: {
+    id:   ["id"],
+    name: ["ad","name","isim","personel","personel_ad"]
+  }
+};
 
-/* =========================
-   🧠 STATE
-========================= */
+const STORAGE = {
+  ADMIN_PIN: "ADMIN_PIN",
+  ADMIN_OK: "ADMIN_OK",
+  LAST_FILTERS: "LAST_FILTERS",
+  CACHE_PERSONEL: "CACHE_PERSONEL"
+};
+
 let supa = null;
+let COLS = { hid:null, hpid:null, htype:null, hnote:null, hdate:null, pid:null, pname:null };
+
 let personelList = [];
 let rows = [];
 let page = 1;
 let selectedRowId = null;
 let pinTry = 0;
 
-const STORAGE = {
-  ADMIN_PIN: 'ADMIN_PIN',
-  ADMIN_OK: 'ADMIN_OK',
-  LAST_FILTERS: 'LAST_FILTERS',
-  CACHE_PERSONEL: 'CACHE_PERSONEL'
-};
+const $ = (id)=>document.getElementById(id);
 
-/* =========================
-   🧩 Helpers
-========================= */
-const $ = (id) => document.getElementById(id);
-
-function toast(title, msg){
-  $('toastTitle').textContent = title || 'Bilgi';
-  $('toastMsg').textContent = msg || '';
-  $('toast').classList.add('show');
+function toast(title,msg){
+  $("toastTitle").textContent = title || "Bilgi";
+  $("toastMsg").textContent = msg || "";
+  $("toast").classList.add("show");
   clearTimeout(toast._t);
-  toast._t = setTimeout(()=> $('toast').classList.remove('show'), 2300);
+  toast._t = setTimeout(()=> $("toast").classList.remove("show"), 2600);
 }
 
 function setStatus(text, ok=true){
-  $('statusPill').textContent = `Durum: ${text}`;
-  $('liveTag').innerHTML = ok
-    ? `<span class="dot ok"></span>Bağlı`
-    : `<span class="dot warn"></span>${text}`;
+  $("statusPill").textContent = `Durum: ${text}`;
+  $("liveTag").innerHTML = ok ? `<span class="dot ok"></span>Bağlı` : `<span class="dot warn"></span>${text}`;
+}
+
+function escapeHtml(s){
+  return (s ?? "").toString()
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
 function fmtDT(iso){
   try{
     const d = new Date(iso);
-    const pad = (n)=> String(n).padStart(2,'0');
+    const pad = (n)=> String(n).padStart(2,"0");
     return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }catch{ return iso || ''; }
-}
-
-function escapeHtml(s){
-  return (s ?? '').toString()
-    .replaceAll('&','&amp;').replaceAll('<','&lt;')
-    .replaceAll('>','&gt;').replaceAll('"','&quot;')
-    .replaceAll("'","&#039;");
+  }catch{ return iso || ""; }
 }
 
 function startOfDayISO(dateStr){
@@ -505,113 +369,88 @@ function endOfDayISO(dateStr){
   return new Date(dateStr + "T23:59:59.999").toISOString();
 }
 
-/* =========================
-   🔌 INIT
-========================= */
-init();
+async function colExists(table, col){
+  // 0-1 satır döner; kolon yoksa Supabase "column does not exist" verir.
+  const { error } = await supa.from(table).select(col).limit(1);
+  return !error;
+}
 
-async function init(){
-  try{
-    if(SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON.includes("YOUR_")){
-      setStatus("Supabase ayarı yok", false);
-      toast("Ayar", "SUPABASE_URL ve SUPABASE_ANON doldur.");
-    }else{
-      supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-      setStatus("Bağlantı hazır", true);
-    }
-  }catch(e){
-    setStatus("Bağlantı hatası", false);
-    toast("Hata", e.message);
+async function pickCol(table, list){
+  for(const c of list){
+    const ok = await colExists(table, c);
+    if(ok) return c;
   }
-
-  wireEvents();
-  loadFiltersFromStorage();
-  await loadPersonel();
-  await applyFilters();
+  return null;
 }
 
-function wireEvents(){
-  $('btnKaydet').addEventListener('click', saveHareket);
-  $('btnTemizle').addEventListener('click', clearForm);
+async function detectColumns(){
+  COLS.hid   = await pickCol(TBL_HAREKET,  CAND.hareket.id);
+  COLS.hpid  = await pickCol(TBL_HAREKET,  CAND.hareket.pid);
+  COLS.htype = await pickCol(TBL_HAREKET,  CAND.hareket.type);
+  COLS.hnote = await pickCol(TBL_HAREKET,  CAND.hareket.note);
+  COLS.hdate = await pickCol(TBL_HAREKET,  CAND.hareket.date);
 
-  $('btnUygula').addEventListener('click', async ()=>{ page=1; await applyFilters(); });
-  $('btnSifirla').addEventListener('click', async ()=>{ resetFilters(); page=1; await applyFilters(); });
+  COLS.pid   = await pickCol(TBL_PERSONEL, CAND.personel.id);
+  COLS.pname = await pickCol(TBL_PERSONEL, CAND.personel.name);
 
-  $('btnPrev').addEventListener('click', async ()=>{ if(page>1){ page--; renderTable(); } });
-  $('btnNext').addEventListener('click', async ()=>{
-    const maxPage = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-    if(page < maxPage){ page++; renderTable(); }
-  });
+  $("colsInfo").textContent =
+    `Kolonlar: hareket(${COLS.hdate||"?"}/${COLS.htype||"?"}/${COLS.hnote||"?"}) personel(${COLS.pname||"?"})`;
 
-  $('btnSync').addEventListener('click', async ()=>{
-    toast("Senkron", "Sunucudan çekiliyor…");
-    await loadPersonel(true);
-    await applyFilters(true);
-  });
-
-  $('btnExport').addEventListener('click', exportXLSX);
-
-  // Admin
-  $('btnAdmin').addEventListener('click', ()=> openAdmin(true));
-  $('btnAdminClose').addEventListener('click', ()=> openAdmin(false));
-  $('btnAdminLogin').addEventListener('click', adminLogin);
-  $('btnAdminLogout').addEventListener('click', adminLogout);
-
-  $('btnAddPersonel').addEventListener('click', addPersonel);
-  $('btnDelPersonel').addEventListener('click', delPersonel);
-
-  $('btnBackup').addEventListener('click', backupJSON);
-  $('fileRestore').addEventListener('change', restoreJSON);
-
-  $('btnDeleteRow').addEventListener('click', ()=> {
-    if(!selectedRowId) return toast("Sil", "Önce listeden bir satır seç.");
-    deleteRow(selectedRowId);
-  });
-
-  $('tbody').addEventListener('click', (e)=>{
-    const tr = e.target.closest('tr');
-    if(!tr) return;
-    selectedRowId = tr.getAttribute('data-id') || null;
-  });
-
-  $('inpAra').addEventListener('keydown', async (e)=>{
-    if(e.key === 'Enter'){ page=1; await applyFilters(); }
-  });
+  // Kritik kolonlar yoksa uyar
+  if(!COLS.hpid){
+    toast("Kolon Uyarısı", "Hareket tablosunda personel_id benzeri kolon bulunamadı.");
+  }
+  if(!COLS.hdate){
+    toast("Kolon Uyarısı", "Tarih kolonu bulunamadı (tarih/created_at/zaman...). Tarih filtresi çalışmaz.");
+  }
 }
 
-/* =========================
-   🧾 FILTERS
-========================= */
 function loadFiltersFromStorage(){
   try{
     const raw = localStorage.getItem(STORAGE.LAST_FILTERS);
     if(!raw) return;
     const f = JSON.parse(raw);
-    $('inpAra').value = f.q || '';
-    $('inpStart').value = f.start || '';
-    $('inpEnd').value = f.end || '';
+    $("inpAra").value = f.q || "";
+    $("inpStart").value = f.start || "";
+    $("inpEnd").value = f.end || "";
   }catch{}
 }
 function saveFiltersToStorage(){
   const f = {
-    q: $('inpAra').value.trim(),
-    p: $('selFilterPersonel').value || '',
-    start: $('inpStart').value || '',
-    end: $('inpEnd').value || ''
+    q: $("inpAra").value.trim(),
+    p: $("selFilterPersonel").value || "",
+    start: $("inpStart").value || "",
+    end: $("inpEnd").value || ""
   };
   localStorage.setItem(STORAGE.LAST_FILTERS, JSON.stringify(f));
 }
 function resetFilters(){
-  $('inpAra').value = '';
-  $('inpStart').value = '';
-  $('inpEnd').value = '';
-  $('selFilterPersonel').value = '';
+  $("inpAra").value = "";
+  $("inpStart").value = "";
+  $("inpEnd").value = "";
+  $("selFilterPersonel").value = "";
   saveFiltersToStorage();
 }
 
-/* =========================
-   👥 PERSONEL
-========================= */
+function fillPersonelSelects(){
+  const withAll = (all)=>{
+    const arr=[];
+    if(all) arr.push(`<option value="">(Hepsi)</option>`);
+    if(!personelList.length) arr.push(`<option value="" disabled selected>Personel yok</option>`);
+    for(const p of personelList){
+      arr.push(`<option value="${p[COLS.pid]}">${escapeHtml(p[COLS.pname]||"")}</option>`);
+    }
+    return arr.join("");
+  };
+  $("selPersonel").innerHTML = withAll(false);
+  $("selFilterPersonel").innerHTML = withAll(true);
+
+  try{
+    const f = JSON.parse(localStorage.getItem(STORAGE.LAST_FILTERS) || "{}");
+    if(f.p) $("selFilterPersonel").value = f.p;
+  }catch{}
+}
+
 async function loadPersonel(force=false){
   const cacheOk = !force && localStorage.getItem(STORAGE.CACHE_PERSONEL);
   if(cacheOk){
@@ -622,17 +461,13 @@ async function loadPersonel(force=false){
     }catch{}
   }
 
-  if(!supa){
+  if(!supa || !COLS.pname){
     personelList = [];
     fillPersonelSelects();
     return;
   }
 
-  const { data, error } = await supa
-    .from(TBL_PERSONEL)
-    .select('*')
-    .order('ad', {ascending:true});
-
+  const { data, error } = await supa.from(TBL_PERSONEL).select("*").order(COLS.pname, {ascending:true});
   if(error){
     toast("Personel", error.message);
     personelList = [];
@@ -643,60 +478,39 @@ async function loadPersonel(force=false){
   fillPersonelSelects();
 }
 
-function fillPersonelSelects(){
-  const makeOpts = (withAll=false)=>{
-    const arr = [];
-    if(withAll) arr.push(`<option value="">(Hepsi)</option>`);
-    if(!personelList.length) arr.push(`<option value="" disabled selected>Personel yok</option>`);
-    for(const p of personelList){
-      arr.push(`<option value="${p.id}">${escapeHtml(p.ad || '')}</option>`);
-    }
-    return arr.join('');
-  };
-
-  $('selPersonel').innerHTML = makeOpts(false);
-  $('selFilterPersonel').innerHTML = makeOpts(true);
-
-  try{
-    const f = JSON.parse(localStorage.getItem(STORAGE.LAST_FILTERS) || '{}');
-    if(f.p) $('selFilterPersonel').value = f.p;
-  }catch{}
-}
-
-/* =========================
-   ✍️ KAYIT
-========================= */
 function clearForm(){
-  $('inpDT').value = '';
-  $('selTip').value = 'GIRIS';
-  $('inpEtiket').value = '';
-  $('inpNot').value = '';
+  $("inpDT").value="";
+  $("selTip").value="GIRIS";
+  $("inpEtiket").value="";
+  $("inpNot").value="";
 }
+
+function isAdmin(){ return localStorage.getItem(STORAGE.ADMIN_OK)==="1"; }
 
 async function saveHareket(){
-  const personel_id = $('selPersonel').value;
-  if(!personel_id) return toast("Eksik", "Personel seç.");
+  if(!supa) return toast("Supabase", "Bağlantı yok. URL/KEY doldur.");
+  if(!COLS.hpid) return toast("Kolon", "personel_id kolonu bulunamadı.");
 
-  const tur = $('selTip').value;
-  const etiket = $('inpEtiket').value.trim();
-  const notRaw = $('inpNot').value.trim();
+  const pid = $("selPersonel").value;
+  if(!pid) return toast("Eksik", "Personel seç.");
 
-  // ✅ Etiket ayrı kolon değil -> not içine göm
-  const not = (etiket ? `#${etiket} ` : '') + (notRaw || '');
+  const tur = $("selTip").value;
+  const etiket = $("inpEtiket").value.trim();
+  const notRaw = $("inpNot").value.trim();
+  const not = (etiket ? `#${etiket} ` : "") + (notRaw || "");
 
-  let dt = $('inpDT').value;
+  const dt = $("inpDT").value;
   const tarihIso = dt ? new Date(dt).toISOString() : new Date().toISOString();
 
-  if(!supa) return toast("Supabase", "Bağlantı yok. Ayarları doldur.");
-
+  // Eğer TYPE kolonu yoksa, türü not içine yazıp yine kaydedelim
   const payload = {
-    [COL_PID]: personel_id,
-    [COL_TYPE]: tur,
-    [COL_NOTE]: not || null,
-    [COL_DATE]: tarihIso
+    [COLS.hpid]: pid
   };
+  if(COLS.htype) payload[COLS.htype] = tur; else payload[COLS.hnote || "not"] = `[${tur}] ` + not;
+  if(COLS.hnote) payload[COLS.hnote] = not || null;
+  if(COLS.hdate) payload[COLS.hdate] = tarihIso;
 
-  $('btnKaydet').disabled = true;
+  $("btnKaydet").disabled = true;
   try{
     const { error } = await supa.from(TBL_HAREKET).insert(payload);
     if(error) throw error;
@@ -707,66 +521,58 @@ async function saveHareket(){
     toast("Hata", e.message);
     setStatus("Kayıt hatası", false);
   }finally{
-    $('btnKaydet').disabled = false;
+    $("btnKaydet").disabled = false;
   }
 }
 
-/* =========================
-   🔎 LISTE
-========================= */
 async function applyFilters(force=false){
   saveFiltersToStorage();
+  if(!supa) { rows=[]; renderTable(); return setStatus("Supabase ayarı yok", false); }
 
-  const q = $('inpAra').value.trim().toLowerCase();
-  const personelFilter = $('selFilterPersonel').value || '';
-  const start = $('inpStart').value;
-  const end = $('inpEnd').value;
+  const q = $("inpAra").value.trim().toLowerCase();
+  const personelFilter = $("selFilterPersonel").value || "";
+  const start = $("inpStart").value;
+  const end = $("inpEnd").value;
 
-  if(!supa){
-    rows = [];
-    renderTable();
-    setStatus("Supabase ayarı yok", false);
-    return;
+  if(force){
+    await detectColumns();
+    await loadPersonel(true);
   }
 
-  let cols = `${COL_ID}, ${COL_PID}, ${COL_TYPE}, ${COL_NOTE}, ${COL_DATE}`;
+  const pmap = new Map((personelList||[]).map(p=>[p[COLS.pid], p[COLS.pname] || ""]));
 
-  let query = supa
-    .from(TBL_HAREKET)
-    .select(cols)
-    .order(COL_DATE, {ascending:false})
-    .limit(LIMIT);
+  let query = supa.from(TBL_HAREKET).select("*").limit(LIMIT);
 
-  const startIso = startOfDayISO(start);
-  const endIso = endOfDayISO(end);
+  // Tarih kolonu varsa filtre uygula
+  const startIso = COLS.hdate ? startOfDayISO(start) : null;
+  const endIso   = COLS.hdate ? endOfDayISO(end) : null;
 
-  if(startIso) query = query.gte(COL_DATE, startIso);
-  if(endIso) query = query.lte(COL_DATE, endIso);
-  if(personelFilter) query = query.eq(COL_PID, personelFilter);
+  if(COLS.hdate){
+    if(startIso) query = query.gte(COLS.hdate, startIso);
+    if(endIso) query = query.lte(COLS.hdate, endIso);
+    query = query.order(COLS.hdate, {ascending:false});
+  }else{
+    // tarih yoksa en azından id varsa id ile sıralayalım
+    if(COLS.hid) query = query.order(COLS.hid, {ascending:false});
+  }
 
-  $('btnUygula').disabled = true;
-  $('btnSifirla').disabled = true;
+  if(personelFilter && COLS.hpid) query = query.eq(COLS.hpid, personelFilter);
+
+  $("btnUygula").disabled = true;
+  $("btnSifirla").disabled = true;
 
   try{
-    if(force) await loadPersonel(true);
-
-    const pmap = new Map(personelList.map(p => [p.id, p.ad || '']));
-
     const { data, error } = await query;
     if(error) throw error;
 
     const raw = data || [];
 
-    if(q){
-      rows = raw.filter(r=>{
-        const ad = (pmap.get(r[COL_PID]) || '').toLowerCase();
-        const note = (r[COL_NOTE] || '').toLowerCase();
-        const type = (r[COL_TYPE] || '').toLowerCase();
-        return ad.includes(q) || note.includes(q) || type.includes(q);
-      });
-    }else{
-      rows = raw;
-    }
+    rows = q ? raw.filter(r=>{
+      const ad = (pmap.get(r[COLS.hpid]) || "").toLowerCase();
+      const note = (COLS.hnote ? (r[COLS.hnote] || "") : "").toLowerCase();
+      const type = (COLS.htype ? (r[COLS.htype] || "") : "").toLowerCase();
+      return ad.includes(q) || note.includes(q) || type.includes(q);
+    }) : raw;
 
     renderTable(pmap);
     setStatus("Hazır", true);
@@ -774,34 +580,32 @@ async function applyFilters(force=false){
     toast("Hata", e.message);
     setStatus("Listeleme hatası", false);
   }finally{
-    $('btnUygula').disabled = false;
-    $('btnSifirla').disabled = false;
+    $("btnUygula").disabled = false;
+    $("btnSifirla").disabled = false;
   }
 }
 
 function renderTable(pmapOverride){
-  const pmap = pmapOverride || new Map(personelList.map(p => [p.id, p.ad || '']));
+  const pmap = pmapOverride || new Map((personelList||[]).map(p=>[p[COLS.pid], p[COLS.pname] || ""]));
   const total = rows.length;
-
-  $('countPill').textContent = `${total} kayıt`;
+  $("countPill").textContent = `${total} kayıt`;
 
   const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
   if(page > maxPage) page = maxPage;
-  $('pageInfo').textContent = `${page} / ${maxPage}`;
+  $("pageInfo").textContent = `${page} / ${maxPage}`;
 
-  const startIdx = (page-1) * PAGE_SIZE;
-  const slice = rows.slice(startIdx, startIdx + PAGE_SIZE);
+  const startIdx = (page-1)*PAGE_SIZE;
+  const slice = rows.slice(startIdx, startIdx+PAGE_SIZE);
 
   const html = slice.map(r=>{
-    const id = r[COL_ID];
-    const ad = pmap.get(r[COL_PID]) || '—';
-    const tip = r[COL_TYPE] || '—';
-    const not = r[COL_NOTE] || '';
-    const tarih = r[COL_DATE];
-
+    const id = COLS.hid ? r[COLS.hid] : "";
+    const ad = pmap.get(r[COLS.hpid]) || "—";
+    const tip = COLS.htype ? (r[COLS.htype] || "—") : "—";
+    const not = COLS.hnote ? (r[COLS.hnote] || "") : "";
+    const t = COLS.hdate ? r[COLS.hdate] : "";
     return `
       <tr data-id="${escapeHtml(id)}">
-        <td>${escapeHtml(fmtDT(tarih))}</td>
+        <td>${escapeHtml(fmtDT(t))}</td>
         <td>${escapeHtml(ad)}</td>
         <td>${escapeHtml(tip)}</td>
         <td>${escapeHtml(not)}</td>
@@ -811,32 +615,25 @@ function renderTable(pmapOverride){
         </td>
       </tr>
     `;
-  }).join('');
+  }).join("");
 
-  $('tbody').innerHTML = html || `<tr><td colspan="5" class="muted">Kayıt yok.</td></tr>`;
+  $("tbody").innerHTML = html || `<tr><td colspan="5" class="muted">Kayıt yok.</td></tr>`;
 }
 
-window.__pickRow = (id)=>{
-  selectedRowId = id;
-  toast("Seçildi", "Satır seçildi ✅");
-};
-
-window.__deleteRow = async (id)=>{
-  if(!isAdmin()) return toast("Yetki", "Silmek için Admin girişi gerekli.");
-  await deleteRow(id);
-};
+window.__pickRow = (id)=>{ selectedRowId = id; toast("Seçildi", "Satır seçildi ✅"); };
+window.__deleteRow = async (id)=>{ if(!isAdmin()) return toast("Yetki","Silmek için Admin girişi gerekli."); await deleteRow(id); };
 
 async function deleteRow(id){
-  if(!supa) return toast("Supabase", "Bağlantı yok.");
-  if(!id) return;
+  if(!supa) return toast("Supabase","Bağlantı yok.");
+  if(!id) return toast("Sil","Satır id yok.");
+  if(!COLS.hid) return toast("Kolon","id kolonu bulunamadı.");
 
   if(!confirm("Bu satır silinsin mi?")) return;
-
   try{
-    const { error } = await supa.from(TBL_HAREKET).delete().eq(COL_ID, id);
+    const { error } = await supa.from(TBL_HAREKET).delete().eq(COLS.hid, id);
     if(error) throw error;
-    toast("Sil", "Silindi ✅");
-    selectedRowId = null;
+    toast("Sil","Silindi ✅");
+    selectedRowId=null;
     await applyFilters(true);
   }catch(e){
     toast("Hata", e.message);
@@ -847,61 +644,49 @@ async function deleteRow(id){
    🔐 ADMIN
 ========================= */
 function openAdmin(show){
-  const m = $('adminModal');
+  const m = $("adminModal");
   if(show){
-    m.classList.add('show');
+    m.classList.add("show");
     const ok = isAdmin();
-    $('adminLocked').classList.toggle('hide', ok);
-    $('adminUnlocked').classList.toggle('hide', !ok);
-    $('pinTry').textContent = String(pinTry);
-  }else{
-    m.classList.remove('show');
-  }
-}
-function isAdmin(){
-  return localStorage.getItem(STORAGE.ADMIN_OK) === '1';
+    $("adminLocked").classList.toggle("hide", ok);
+    $("adminUnlocked").classList.toggle("hide", !ok);
+    $("pinTry").textContent = String(pinTry);
+  }else m.classList.remove("show");
 }
 function adminLogin(){
-  const pin = $('adminPin').value || '';
-  const real = localStorage.getItem(STORAGE.ADMIN_PIN) || '';
-
-  if(!real){
-    pinTry++;
-    $('pinTry').textContent = String(pinTry);
-    return toast("Admin", "ADMIN_PIN ayarlı değil (localStorage).");
-  }
-
-  if(pin === real){
-    localStorage.setItem(STORAGE.ADMIN_OK, '1');
-    $('adminPin').value = '';
-    toast("Admin", "Giriş başarılı ✅");
+  const pin = $("adminPin").value || "";
+  const real = localStorage.getItem(STORAGE.ADMIN_PIN) || "";
+  if(!real){ pinTry++; $("pinTry").textContent=String(pinTry); return toast("Admin","ADMIN_PIN ayarlı değil."); }
+  if(pin===real){
+    localStorage.setItem(STORAGE.ADMIN_OK,"1");
+    $("adminPin").value="";
+    toast("Admin","Giriş başarılı ✅");
     openAdmin(true);
   }else{
-    pinTry++;
-    $('pinTry').textContent = String(pinTry);
-    toast("Admin", "PIN yanlış.");
+    pinTry++; $("pinTry").textContent=String(pinTry);
+    toast("Admin","PIN yanlış.");
   }
 }
 function adminLogout(){
   localStorage.removeItem(STORAGE.ADMIN_OK);
-  toast("Admin", "Çıkış yapıldı.");
+  toast("Admin","Çıkış yapıldı.");
   openAdmin(true);
 }
 
-/* =========================
-   ➕ PERSONEL CRUD
-========================= */
 async function addPersonel(){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
-  const ad = $('inpNewPersonel').value.trim();
-  if(!ad) return toast("Eksik", "Personel adı yaz.");
-  if(!supa) return toast("Supabase", "Bağlantı yok.");
+  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
+  if(!supa) return toast("Supabase","Bağlantı yok.");
+  if(!COLS.pname) return toast("Kolon","Personel ad kolonu bulunamadı.");
+
+  const ad = $("inpNewPersonel").value.trim();
+  if(!ad) return toast("Eksik","Personel adı yaz.");
 
   try{
-    const { error } = await supa.from(TBL_PERSONEL).insert({ ad });
+    const payload = { [COLS.pname]: ad };
+    const { error } = await supa.from(TBL_PERSONEL).insert(payload);
     if(error) throw error;
-    $('inpNewPersonel').value = '';
-    toast("Personel", "Eklendi ✅");
+    $("inpNewPersonel").value="";
+    toast("Personel","Eklendi ✅");
     await loadPersonel(true);
     await applyFilters(true);
   }catch(e){
@@ -910,16 +695,18 @@ async function addPersonel(){
 }
 
 async function delPersonel(){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
-  const id = $('selPersonel').value;
-  if(!id) return toast("Eksik", "Silmek için personel seç.");
+  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
+  if(!supa) return toast("Supabase","Bağlantı yok.");
+  if(!COLS.pid) return toast("Kolon","Personel id kolonu bulunamadı.");
+
+  const id = $("selPersonel").value;
+  if(!id) return toast("Eksik","Silmek için personel seç.");
   if(!confirm("Seçili personel silinsin mi?")) return;
-  if(!supa) return toast("Supabase", "Bağlantı yok.");
 
   try{
-    const { error } = await supa.from(TBL_PERSONEL).delete().eq('id', id);
+    const { error } = await supa.from(TBL_PERSONEL).delete().eq(COLS.pid, id);
     if(error) throw error;
-    toast("Personel", "Silindi ✅");
+    toast("Personel","Silindi ✅");
     await loadPersonel(true);
     await applyFilters(true);
   }catch(e){
@@ -927,119 +714,170 @@ async function delPersonel(){
   }
 }
 
-/* =========================
-   💾 BACKUP / RESTORE
-========================= */
 async function backupJSON(){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
-  if(!supa) return toast("Supabase", "Bağlantı yok.");
+  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
+  if(!supa) return toast("Supabase","Bağlantı yok.");
 
   try{
-    toast("Yedek", "Çekiliyor…");
-    const { data: p, error: ep } = await supa.from(TBL_PERSONEL).select('*').order('ad', {ascending:true}).limit(LIMIT);
+    toast("Yedek","Çekiliyor…");
+    const { data: p, error: ep } = await supa.from(TBL_PERSONEL).select("*").limit(LIMIT);
     if(ep) throw ep;
-
-    const { data: h, error: eh } = await supa.from(TBL_HAREKET).select('*').order(COL_DATE, {ascending:false}).limit(LIMIT);
+    const { data: h, error: eh } = await supa.from(TBL_HAREKET).select("*").limit(LIMIT);
     if(eh) throw eh;
 
-    const payload = {
-      meta: { createdAt: new Date().toISOString(), limit: LIMIT },
-      personeller: p || [],
-      hareketler: h || []
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `personel_takip_yedek_${new Date().toISOString().slice(0,10)}.json`;
+    const payload = { meta:{ createdAt:new Date().toISOString(), limit:LIMIT, cols:COLS }, personeller:p||[], hareketler:h||[] };
+    const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=`personel_takip_yedek_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
-    toast("Yedek", "JSON indirildi ✅");
+    toast("Yedek","JSON indirildi ✅");
   }catch(e){
     toast("Hata", e.message);
   }
 }
 
 async function restoreJSON(evt){
-  if(!isAdmin()) return toast("Yetki", "Admin gerekli.");
-  const file = evt.target.files?.[0];
-  evt.target.value = '';
+  if(!isAdmin()) return toast("Yetki","Admin gerekli.");
+  const file = evt.target.files?.[0]; evt.target.value="";
   if(!file) return;
-  if(!supa) return toast("Supabase", "Bağlantı yok.");
+  if(!supa) return toast("Supabase","Bağlantı yok.");
 
   try{
-    const text = await file.text();
-    const json = JSON.parse(text);
-
+    const json = JSON.parse(await file.text());
     const p = Array.isArray(json.personeller) ? json.personeller : [];
     const h = Array.isArray(json.hareketler) ? json.hareketler : [];
-
     let okP=0, skipP=0, okH=0, skipH=0;
 
-    toast("Geri Yükle", "Yükleniyor…");
+    toast("Geri Yükle","Yükleniyor…");
 
     for(const item of p){
-      if(!item || !item.ad) { skipP++; continue; }
-      const { error } = await supa.from(TBL_PERSONEL).insert({ ad: item.ad });
+      const nameVal = item[COLS.pname] || item.ad || item.name || item.isim;
+      if(!nameVal) { skipP++; continue; }
+      const { error } = await supa.from(TBL_PERSONEL).insert({ [COLS.pname]: nameVal });
       if(error) skipP++; else okP++;
-      if(okP + skipP >= LIMIT) break;
+      if(okP+skipP>=LIMIT) break;
     }
 
     await loadPersonel(true);
-    const pmap = new Map(personelList.map(x=>[x.ad?.toLowerCase(), x.id]));
+    const pmap = new Map(personelList.map(x=>[(x[COLS.pname]||"").toLowerCase(), x[COLS.pid]]));
 
     for(const item of h){
-      if(!item) { skipH++; continue; }
-
-      let pid = item[COL_PID];
-      const ad = (item.personel_ad || item.personelName || '').toString().trim().toLowerCase();
+      let pid = item[COLS.hpid] || item.personel_id || item.personelId;
+      const ad = (item.personel_ad || item.personelName || "").toString().trim().toLowerCase();
       if(ad && pmap.has(ad)) pid = pmap.get(ad);
-
       if(!pid){ skipH++; continue; }
 
-      const payload = {
-        [COL_PID]: pid,
-        [COL_TYPE]: item[COL_TYPE] || item.tip || item.tur || 'NOT',
-        [COL_NOTE]: item[COL_NOTE] || item.not || null,
-        [COL_DATE]: item[COL_DATE] || item.tarih || new Date().toISOString()
-      };
+      const payload = { [COLS.hpid]: pid };
+      const tval = item[COLS.htype] || item.tur || item.tip || item.type || "NOT";
+      const nval = item[COLS.hnote] || item.not || item.aciklama || item.note || null;
+      const dval = item[COLS.hdate] || item.tarih || item.created_at || new Date().toISOString();
+
+      if(COLS.htype) payload[COLS.htype] = tval;
+      if(COLS.hnote) payload[COLS.hnote] = nval;
+      if(COLS.hdate) payload[COLS.hdate] = dval;
 
       const { error } = await supa.from(TBL_HAREKET).insert(payload);
       if(error) skipH++; else okH++;
-      if(okH + skipH >= LIMIT) break;
+      if(okH+skipH>=LIMIT) break;
     }
 
-    $('restoreReport').textContent = `Personel: +${okP} (atla:${skipP}) | Hareket: +${okH} (atla:${skipH})`;
-    toast("Geri Yükle", "Bitti ✅");
+    $("restoreReport").textContent = `Personel: +${okP} (atla:${skipP}) | Hareket: +${okH} (atla:${skipH})`;
+    toast("Geri Yükle","Bitti ✅");
     await applyFilters(true);
   }catch(e){
     toast("Hata", e.message);
   }
 }
 
-/* =========================
-   📤 EXPORT XLSX
-========================= */
 function exportXLSX(){
   try{
-    if(!rows.length) return toast("Excel", "Kayıt yok.");
-    const pmap = new Map(personelList.map(p => [p.id, p.ad || '']));
-
+    if(!rows.length) return toast("Excel","Kayıt yok.");
+    const pmap = new Map(personelList.map(p=>[p[COLS.pid], p[COLS.pname] || ""]));
     const data = rows.slice(0, LIMIT).map(r=>({
-      "Tarih": fmtDT(r[COL_DATE]),
-      "Personel": pmap.get(r[COL_PID]) || '',
-      "Tür": r[COL_TYPE] || '',
-      "Not": r[COL_NOTE] || ''
+      "Tarih": COLS.hdate ? fmtDT(r[COLS.hdate]) : "",
+      "Personel": pmap.get(r[COLS.hpid]) || "",
+      "Tür": COLS.htype ? (r[COLS.htype] || "") : "",
+      "Not": COLS.hnote ? (r[COLS.hnote] || "") : ""
     }));
-
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Hareketler");
     XLSX.writeFile(wb, `personel_hareketleri_${new Date().toISOString().slice(0,10)}.xlsx`);
-    toast("Excel", "XLSX indirildi ✅");
+    toast("Excel","XLSX indirildi ✅");
   }catch(e){
     toast("Hata", e.message);
   }
 }
+
+/* =========================
+   EVENTS + INIT
+========================= */
+function wire(){
+  $("btnKaydet").addEventListener("click", saveHareket);
+  $("btnTemizle").addEventListener("click", clearForm);
+  $("btnUygula").addEventListener("click", async()=>{ page=1; await applyFilters(); });
+  $("btnSifirla").addEventListener("click", async()=>{ resetFilters(); page=1; await applyFilters(); });
+  $("btnPrev").addEventListener("click", ()=>{ if(page>1){ page--; renderTable(); } });
+  $("btnNext").addEventListener("click", ()=>{
+    const maxPage = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if(page < maxPage){ page++; renderTable(); }
+  });
+  $("btnSync").addEventListener("click", async()=>{
+    toast("Senkron","Sunucudan çekiliyor…");
+    await detectColumns();
+    await loadPersonel(true);
+    await applyFilters(true);
+  });
+  $("btnExport").addEventListener("click", exportXLSX);
+
+  $("btnAdmin").addEventListener("click", ()=>openAdmin(true));
+  $("btnAdminClose").addEventListener("click", ()=>openAdmin(false));
+  $("btnAdminLogin").addEventListener("click", adminLogin);
+  $("btnAdminLogout").addEventListener("click", adminLogout);
+
+  $("btnAddPersonel").addEventListener("click", addPersonel);
+  $("btnDelPersonel").addEventListener("click", delPersonel);
+
+  $("btnBackup").addEventListener("click", backupJSON);
+  $("fileRestore").addEventListener("change", restoreJSON);
+
+  $("btnDeleteRow").addEventListener("click", ()=>{
+    if(!selectedRowId) return toast("Sil","Önce listeden bir satır seç.");
+    deleteRow(selectedRowId);
+  });
+
+  $("tbody").addEventListener("click",(e)=>{
+    const tr = e.target.closest("tr"); if(!tr) return;
+    selectedRowId = tr.getAttribute("data-id") || null;
+  });
+
+  $("inpAra").addEventListener("keydown", async(e)=>{
+    if(e.key==="Enter"){ page=1; await applyFilters(); }
+  });
+}
+
+(async function init(){
+  wire();
+  loadFiltersFromStorage();
+
+  try{
+    if(SUPABASE_URL.includes("YOUR_") || SUPABASE_ANON.includes("YOUR_")){
+      setStatus("Supabase ayarı yok", false);
+      toast("Ayar","SUPABASE_URL ve SUPABASE_ANON doldur.");
+      return;
+    }
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    setStatus("Bağlantı hazır", true);
+
+    await detectColumns();
+    await loadPersonel();
+    await applyFilters();
+  }catch(e){
+    setStatus("Başlatma hatası", false);
+    toast("Hata", e.message);
+  }
+})();
 </script>
 </body>
 </html>
