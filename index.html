@@ -3,21 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Personel Takip (FINAL - Auto Kolon + Beyaz)</title>
+  <title>Personel Takip (FINAL - Auto Kolon V2 - Beyaz)</title>
 
   <style>
     :root{
-      --bg:#f6f8fc;
-      --card:#ffffff;
-      --txt:#0f172a;
-      --muted:#64748b;
-      --line:rgba(15,23,42,.10);
-      --btn:#2563eb;
-      --btn2:#eef2ff;
-      --danger:#ef4444;
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --radius:14px;
+      --bg:#f6f8fc; --card:#ffffff; --txt:#0f172a; --muted:#64748b;
+      --line:rgba(15,23,42,.10); --btn:#2563eb; --btn2:#eef2ff;
+      --danger:#ef4444; --ok:#16a34a; --warn:#f59e0b; --radius:14px;
       --shadow: 0 10px 30px rgba(15,23,42,.08);
     }
     *{box-sizing:border-box}
@@ -207,7 +199,6 @@
   </div>
 </main>
 
-<!-- ADMIN MODAL -->
 <div id="adminModal" class="toast" style="top:70px; bottom:auto; transform:translateX(-50%);">
   <div class="row">
     <b>Admin</b>
@@ -251,6 +242,7 @@
         <button class="btn ok" id="btnAddPersonel" style="width:100%">Ekle</button>
       </div>
     </div>
+
     <div class="row" style="margin-top:10px">
       <button class="btn danger mini" id="btnDelPersonel">Seçili personeli sil</button>
       <span class="muted">FK varsa Supabase engeller.</span>
@@ -279,41 +271,22 @@
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast">
   <b id="toastTitle">—</b>
   <div class="muted" id="toastMsg">—</div>
 </div>
 
 <script>
-/* =========================
-   🔧 AYARLAR
-========================= */
 const LIMIT = 5000;
 const PAGE_SIZE = 100;
 
-// ✅ Supabase Config (BURAYI DOLDUR)
+// ✅ Supabase Config
 const SUPABASE_URL = "https://ngnpocqaznpuggsvwbif.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbnBvY3Fhem5wdWdnc3Z3YmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDIzNzksImV4cCI6MjA4NjI3ODM3OX0.a2bCf0CfV7Vur6z60Q9O1nBXVdsCPHL3KJTBiEmbpec";
 
 // ✅ Tablo adları
 const TBL_PERSONEL = "personeller";
 const TBL_HAREKET  = "hareketler";
-
-// ✅ Kolon adayları (AUTO bulacak)
-const CAND = {
-  hareket: {
-    id:   ["id"],
-    pid:  ["personel_id","personelId","pid","personel_uuid","personel"],
-    type: ["tur","tip","type","islem","hareket_turu"],
-    note: ["not","aciklama","note","mesaj","yorum"],
-    date: ["tarih","created_at","createdAt","zaman","datetime","tarih_saat","ts"]
-  },
-  personel: {
-    id:   ["id"],
-    name: ["ad","name","isim","personel","personel_ad"]
-  }
-};
 
 const STORAGE = {
   ADMIN_PIN: "ADMIN_PIN",
@@ -323,6 +296,8 @@ const STORAGE = {
 };
 
 let supa = null;
+
+// Bulunan kolonlar
 let COLS = { hid:null, hpid:null, htype:null, hnote:null, hdate:null, pid:null, pname:null };
 
 let personelList = [];
@@ -340,18 +315,15 @@ function toast(title,msg){
   clearTimeout(toast._t);
   toast._t = setTimeout(()=> $("toast").classList.remove("show"), 2600);
 }
-
 function setStatus(text, ok=true){
   $("statusPill").textContent = `Durum: ${text}`;
   $("liveTag").innerHTML = ok ? `<span class="dot ok"></span>Bağlı` : `<span class="dot warn"></span>${text}`;
 }
-
 function escapeHtml(s){
   return (s ?? "").toString()
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
-
 function fmtDT(iso){
   try{
     const d = new Date(iso);
@@ -359,7 +331,6 @@ function fmtDT(iso){
     return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }catch{ return iso || ""; }
 }
-
 function startOfDayISO(dateStr){
   if(!dateStr) return null;
   return new Date(dateStr + "T00:00:00").toISOString();
@@ -370,38 +341,90 @@ function endOfDayISO(dateStr){
 }
 
 async function colExists(table, col){
-  // 0-1 satır döner; kolon yoksa Supabase "column does not exist" verir.
   const { error } = await supa.from(table).select(col).limit(1);
   return !error;
 }
-
-async function pickCol(table, list){
+async function pickColByCandidates(table, list){
   for(const c of list){
-    const ok = await colExists(table, c);
-    if(ok) return c;
+    if(await colExists(table, c)) return c;
   }
   return null;
 }
+async function sampleRow(table){
+  const { data, error } = await supa.from(table).select("*").limit(1);
+  if(error) return null;
+  return (data && data[0]) ? data[0] : null;
+}
+function guessKeyFromRow(row, {
+  exclude = [],
+  preferIncludes = [],
+  avoidIncludes = []
+} = {}){
+  if(!row) return null;
+  const keys = Object.keys(row);
 
-async function detectColumns(){
-  COLS.hid   = await pickCol(TBL_HAREKET,  CAND.hareket.id);
-  COLS.hpid  = await pickCol(TBL_HAREKET,  CAND.hareket.pid);
-  COLS.htype = await pickCol(TBL_HAREKET,  CAND.hareket.type);
-  COLS.hnote = await pickCol(TBL_HAREKET,  CAND.hareket.note);
-  COLS.hdate = await pickCol(TBL_HAREKET,  CAND.hareket.date);
+  const okKeys = keys.filter(k=>{
+    const lk = k.toLowerCase();
+    if(exclude.includes(lk)) return false;
+    if(avoidIncludes.some(w => lk.includes(w))) return false;
+    return true;
+  });
 
-  COLS.pid   = await pickCol(TBL_PERSONEL, CAND.personel.id);
-  COLS.pname = await pickCol(TBL_PERSONEL, CAND.personel.name);
+  // 1) keyword önceliği
+  for(const pref of preferIncludes){
+    const hit = okKeys.find(k => k.toLowerCase().includes(pref));
+    if(hit) return hit;
+  }
+
+  // 2) string dolu değer olan ilk kolon
+  for(const k of okKeys){
+    const v = row[k];
+    if(typeof v === "string" && v.trim().length) return k;
+  }
+
+  // 3) kalanlardan ilkini ver (en kötü ihtimal)
+  return okKeys[0] || null;
+}
+
+async function detectColumnsV2(){
+  // ✅ önce kesinler
+  COLS.hid   = await pickColByCandidates(TBL_HAREKET,  ["id"]);
+  COLS.hpid  = await pickColByCandidates(TBL_HAREKET,  ["personel_id","personelId","pid","personel_uuid","personel"]);
+  COLS.htype = await pickColByCandidates(TBL_HAREKET,  ["tur","tip","type","islem","hareket_turu"]);
+  COLS.hnote = await pickColByCandidates(TBL_HAREKET,  ["not","aciklama","note","mesaj","yorum","detay","description","notu"]);
+  COLS.hdate = await pickColByCandidates(TBL_HAREKET,  ["tarih","created_at","createdAt","zaman","datetime","tarih_saat","ts"]);
+
+  COLS.pid   = await pickColByCandidates(TBL_PERSONEL, ["id"]);
+  COLS.pname = await pickColByCandidates(TBL_PERSONEL, ["ad","adi","isim","name","full_name","fullname","ad_soyad","adsoyad","personel_ad","personel_adi"]);
+
+  // ✅ satırdan otomatik tahmin (esas kurtarıcı)
+  const pr = await sampleRow(TBL_PERSONEL);
+  if(!COLS.pname){
+    COLS.pname = guessKeyFromRow(pr, {
+      exclude: ["id","created_at","updated_at"],
+      preferIncludes: ["ad","isim","name","soyad","full","kisi","personel"],
+      avoidIncludes: ["id","_id","uuid"]
+    });
+  }
+
+  const hr = await sampleRow(TBL_HAREKET);
+  if(!COLS.hnote){
+    COLS.hnote = guessKeyFromRow(hr, {
+      exclude: ["id","created_at","updated_at"],
+      preferIncludes: ["not","acik","note","mesaj","yorum","detay","desc"],
+      avoidIncludes: ["id","_id","uuid","tur","tip","type","tarih","created_at"]
+    });
+  }
+  if(!COLS.hid && hr) COLS.hid = guessKeyFromRow(hr, { preferIncludes:["id"], avoidIncludes:["_id"] });
 
   $("colsInfo").textContent =
     `Kolonlar: hareket(${COLS.hdate||"?"}/${COLS.htype||"?"}/${COLS.hnote||"?"}) personel(${COLS.pname||"?"})`;
 
-  // Kritik kolonlar yoksa uyar
-  if(!COLS.hpid){
-    toast("Kolon Uyarısı", "Hareket tablosunda personel_id benzeri kolon bulunamadı.");
+  if(!COLS.pname){
+    toast("Personel Kolonu", "Personel ad kolonu bulunamadı. Personeller tablosuna 1 satır ekleyip tekrar senkronize et.");
   }
-  if(!COLS.hdate){
-    toast("Kolon Uyarısı", "Tarih kolonu bulunamadı (tarih/created_at/zaman...). Tarih filtresi çalışmaz.");
+  if(!COLS.hpid){
+    toast("Hareket Kolonu", "Hareket tablosunda personel_id benzeri kolon bulunamadı.");
   }
 }
 
@@ -433,17 +456,19 @@ function resetFilters(){
 }
 
 function fillPersonelSelects(){
-  const withAll = (all)=>{
+  const opt = (all)=>{
     const arr=[];
     if(all) arr.push(`<option value="">(Hepsi)</option>`);
     if(!personelList.length) arr.push(`<option value="" disabled selected>Personel yok</option>`);
     for(const p of personelList){
-      arr.push(`<option value="${p[COLS.pid]}">${escapeHtml(p[COLS.pname]||"")}</option>`);
+      const id = COLS.pid ? p[COLS.pid] : (p.id || "");
+      const name = COLS.pname ? (p[COLS.pname] || "") : "";
+      arr.push(`<option value="${escapeHtml(id)}">${escapeHtml(name || id || "—")}</option>`);
     }
     return arr.join("");
   };
-  $("selPersonel").innerHTML = withAll(false);
-  $("selFilterPersonel").innerHTML = withAll(true);
+  $("selPersonel").innerHTML = opt(false);
+  $("selFilterPersonel").innerHTML = opt(true);
 
   try{
     const f = JSON.parse(localStorage.getItem(STORAGE.LAST_FILTERS) || "{}");
@@ -460,14 +485,14 @@ async function loadPersonel(force=false){
       return;
     }catch{}
   }
-
-  if(!supa || !COLS.pname){
+  if(!supa){
     personelList = [];
     fillPersonelSelects();
     return;
   }
 
-  const { data, error } = await supa.from(TBL_PERSONEL).select("*").order(COLS.pname, {ascending:true});
+  // kolon bilinmese bile * çekiyoruz
+  const { data, error } = await supa.from(TBL_PERSONEL).select("*").limit(LIMIT);
   if(error){
     toast("Personel", error.message);
     personelList = [];
@@ -475,6 +500,18 @@ async function loadPersonel(force=false){
     personelList = data || [];
     localStorage.setItem(STORAGE.CACHE_PERSONEL, JSON.stringify(personelList));
   }
+
+  // hala pname yoksa, ilk satırdan tekrar dene
+  if(!COLS.pname && personelList[0]){
+    COLS.pname = guessKeyFromRow(personelList[0], {
+      exclude:["id","created_at","updated_at"],
+      preferIncludes:["ad","isim","name","soyad","full","kisi","personel"],
+      avoidIncludes:["id","_id","uuid"]
+    });
+    $("colsInfo").textContent =
+      `Kolonlar: hareket(${COLS.hdate||"?"}/${COLS.htype||"?"}/${COLS.hnote||"?"}) personel(${COLS.pname||"?"})`;
+  }
+
   fillPersonelSelects();
 }
 
@@ -489,7 +526,7 @@ function isAdmin(){ return localStorage.getItem(STORAGE.ADMIN_OK)==="1"; }
 
 async function saveHareket(){
   if(!supa) return toast("Supabase", "Bağlantı yok. URL/KEY doldur.");
-  if(!COLS.hpid) return toast("Kolon", "personel_id kolonu bulunamadı.");
+  if(!COLS.hpid) return toast("Kolon", "personel_id benzeri kolon bulunamadı.");
 
   const pid = $("selPersonel").value;
   if(!pid) return toast("Eksik", "Personel seç.");
@@ -502,11 +539,11 @@ async function saveHareket(){
   const dt = $("inpDT").value;
   const tarihIso = dt ? new Date(dt).toISOString() : new Date().toISOString();
 
-  // Eğer TYPE kolonu yoksa, türü not içine yazıp yine kaydedelim
-  const payload = {
-    [COLS.hpid]: pid
-  };
-  if(COLS.htype) payload[COLS.htype] = tur; else payload[COLS.hnote || "not"] = `[${tur}] ` + not;
+  const payload = { [COLS.hpid]: pid };
+
+  if(COLS.htype) payload[COLS.htype] = tur;
+  else if(COLS.hnote) payload[COLS.hnote] = `[${tur}] ` + not;
+
   if(COLS.hnote) payload[COLS.hnote] = not || null;
   if(COLS.hdate) payload[COLS.hdate] = tarihIso;
 
@@ -527,7 +564,7 @@ async function saveHareket(){
 
 async function applyFilters(force=false){
   saveFiltersToStorage();
-  if(!supa) { rows=[]; renderTable(); return setStatus("Supabase ayarı yok", false); }
+  if(!supa){ rows=[]; renderTable(); return setStatus("Supabase ayarı yok", false); }
 
   const q = $("inpAra").value.trim().toLowerCase();
   const personelFilter = $("selFilterPersonel").value || "";
@@ -535,25 +572,26 @@ async function applyFilters(force=false){
   const end = $("inpEnd").value;
 
   if(force){
-    await detectColumns();
+    await detectColumnsV2();
     await loadPersonel(true);
   }
 
-  const pmap = new Map((personelList||[]).map(p=>[p[COLS.pid], p[COLS.pname] || ""]));
+  const pmap = new Map(personelList.map(p=>{
+    const id = COLS.pid ? p[COLS.pid] : (p.id || "");
+    const name = COLS.pname ? (p[COLS.pname] || "") : "";
+    return [id, name || id || ""];
+  }));
 
   let query = supa.from(TBL_HAREKET).select("*").limit(LIMIT);
 
-  // Tarih kolonu varsa filtre uygula
-  const startIso = COLS.hdate ? startOfDayISO(start) : null;
-  const endIso   = COLS.hdate ? endOfDayISO(end) : null;
-
   if(COLS.hdate){
-    if(startIso) query = query.gte(COLS.hdate, startIso);
-    if(endIso) query = query.lte(COLS.hdate, endIso);
+    const sIso = startOfDayISO(start);
+    const eIso = endOfDayISO(end);
+    if(sIso) query = query.gte(COLS.hdate, sIso);
+    if(eIso) query = query.lte(COLS.hdate, eIso);
     query = query.order(COLS.hdate, {ascending:false});
-  }else{
-    // tarih yoksa en azından id varsa id ile sıralayalım
-    if(COLS.hid) query = query.order(COLS.hid, {ascending:false});
+  }else if(COLS.hid){
+    query = query.order(COLS.hid, {ascending:false});
   }
 
   if(personelFilter && COLS.hpid) query = query.eq(COLS.hpid, personelFilter);
@@ -585,8 +623,7 @@ async function applyFilters(force=false){
   }
 }
 
-function renderTable(pmapOverride){
-  const pmap = pmapOverride || new Map((personelList||[]).map(p=>[p[COLS.pid], p[COLS.pname] || ""]));
+function renderTable(pmap){
   const total = rows.length;
   $("countPill").textContent = `${total} kayıt`;
 
@@ -598,20 +635,21 @@ function renderTable(pmapOverride){
   const slice = rows.slice(startIdx, startIdx+PAGE_SIZE);
 
   const html = slice.map(r=>{
-    const id = COLS.hid ? r[COLS.hid] : "";
-    const ad = pmap.get(r[COLS.hpid]) || "—";
+    const id = COLS.hid ? (r[COLS.hid] ?? "") : "";
+    const pid = COLS.hpid ? (r[COLS.hpid] ?? "") : "";
+    const ad = (pmap && pmap.get(pid)) ? pmap.get(pid) : (pid || "—");
     const tip = COLS.htype ? (r[COLS.htype] || "—") : "—";
     const not = COLS.hnote ? (r[COLS.hnote] || "") : "";
-    const t = COLS.hdate ? r[COLS.hdate] : "";
+    const t = COLS.hdate ? (r[COLS.hdate] || "") : "";
     return `
-      <tr data-id="${escapeHtml(id)}">
+      <tr data-id="${escapeHtml(String(id))}">
         <td>${escapeHtml(fmtDT(t))}</td>
         <td>${escapeHtml(ad)}</td>
         <td>${escapeHtml(tip)}</td>
         <td>${escapeHtml(not)}</td>
         <td class="right">
-          <button class="btn secondary mini" onclick="window.__pickRow('${escapeHtml(id)}')">Seç</button>
-          <button class="btn danger mini" onclick="window.__deleteRow('${escapeHtml(id)}')">Sil</button>
+          <button class="btn secondary mini" onclick="window.__pickRow('${escapeHtml(String(id))}')">Seç</button>
+          <button class="btn danger mini" onclick="window.__deleteRow('${escapeHtml(String(id))}')">Sil</button>
         </td>
       </tr>
     `;
@@ -640,9 +678,6 @@ async function deleteRow(id){
   }
 }
 
-/* =========================
-   🔐 ADMIN
-========================= */
 function openAdmin(show){
   const m = $("adminModal");
   if(show){
@@ -676,10 +711,15 @@ function adminLogout(){
 async function addPersonel(){
   if(!isAdmin()) return toast("Yetki","Admin gerekli.");
   if(!supa) return toast("Supabase","Bağlantı yok.");
-  if(!COLS.pname) return toast("Kolon","Personel ad kolonu bulunamadı.");
 
   const ad = $("inpNewPersonel").value.trim();
   if(!ad) return toast("Eksik","Personel adı yaz.");
+
+  // pname yoksa bile row’dan tahmin etmeye çalışacağız, ama insert için kolona ihtiyaç var
+  if(!COLS.pname){
+    toast("Kolon", "Personel ad kolonu bulunamadı. Personeller tablosundaki ad kolonunu tespit edemedim.");
+    return;
+  }
 
   try{
     const payload = { [COLS.pname]: ad };
@@ -687,7 +727,6 @@ async function addPersonel(){
     if(error) throw error;
     $("inpNewPersonel").value="";
     toast("Personel","Eklendi ✅");
-    await loadPersonel(true);
     await applyFilters(true);
   }catch(e){
     toast("Hata", e.message);
@@ -707,7 +746,6 @@ async function delPersonel(){
     const { error } = await supa.from(TBL_PERSONEL).delete().eq(COLS.pid, id);
     if(error) throw error;
     toast("Personel","Silindi ✅");
-    await loadPersonel(true);
     await applyFilters(true);
   }catch(e){
     toast("Hata", e.message);
@@ -751,24 +789,27 @@ async function restoreJSON(evt){
 
     toast("Geri Yükle","Yükleniyor…");
 
-    for(const item of p){
-      const nameVal = item[COLS.pname] || item.ad || item.name || item.isim;
-      if(!nameVal) { skipP++; continue; }
-      const { error } = await supa.from(TBL_PERSONEL).insert({ [COLS.pname]: nameVal });
-      if(error) skipP++; else okP++;
-      if(okP+skipP>=LIMIT) break;
+    if(COLS.pname){
+      for(const item of p){
+        const nameVal = item[COLS.pname] || item.ad || item.name || item.isim || item.adi;
+        if(!nameVal) { skipP++; continue; }
+        const { error } = await supa.from(TBL_PERSONEL).insert({ [COLS.pname]: nameVal });
+        if(error) skipP++; else okP++;
+        if(okP+skipP>=LIMIT) break;
+      }
+    }else{
+      skipP = p.length;
     }
 
-    await loadPersonel(true);
-    const pmap = new Map(personelList.map(x=>[(x[COLS.pname]||"").toLowerCase(), x[COLS.pid]]));
+    await applyFilters(true);
 
+    // hareket restore: kolon varsa doldur, yoksa atla
     for(const item of h){
-      let pid = item[COLS.hpid] || item.personel_id || item.personelId;
-      const ad = (item.personel_ad || item.personelName || "").toString().trim().toLowerCase();
-      if(ad && pmap.has(ad)) pid = pmap.get(ad);
+      let pid = item[COLS.hpid] || item.personel_id || item.personelId || null;
       if(!pid){ skipH++; continue; }
 
       const payload = { [COLS.hpid]: pid };
+
       const tval = item[COLS.htype] || item.tur || item.tip || item.type || "NOT";
       const nval = item[COLS.hnote] || item.not || item.aciklama || item.note || null;
       const dval = item[COLS.hdate] || item.tarih || item.created_at || new Date().toISOString();
@@ -793,13 +834,19 @@ async function restoreJSON(evt){
 function exportXLSX(){
   try{
     if(!rows.length) return toast("Excel","Kayıt yok.");
-    const pmap = new Map(personelList.map(p=>[p[COLS.pid], p[COLS.pname] || ""]));
+    const pmap = new Map(personelList.map(p=>{
+      const id = COLS.pid ? p[COLS.pid] : (p.id || "");
+      const name = COLS.pname ? (p[COLS.pname] || "") : "";
+      return [id, name || id || ""];
+    }));
+
     const data = rows.slice(0, LIMIT).map(r=>({
       "Tarih": COLS.hdate ? fmtDT(r[COLS.hdate]) : "",
-      "Personel": pmap.get(r[COLS.hpid]) || "",
+      "Personel": pmap.get(r[COLS.hpid]) || (r[COLS.hpid] || ""),
       "Tür": COLS.htype ? (r[COLS.htype] || "") : "",
       "Not": COLS.hnote ? (r[COLS.hnote] || "") : ""
     }));
+
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Hareketler");
@@ -810,23 +857,18 @@ function exportXLSX(){
   }
 }
 
-/* =========================
-   EVENTS + INIT
-========================= */
 function wire(){
   $("btnKaydet").addEventListener("click", saveHareket);
   $("btnTemizle").addEventListener("click", clearForm);
   $("btnUygula").addEventListener("click", async()=>{ page=1; await applyFilters(); });
   $("btnSifirla").addEventListener("click", async()=>{ resetFilters(); page=1; await applyFilters(); });
-  $("btnPrev").addEventListener("click", ()=>{ if(page>1){ page--; renderTable(); } });
+  $("btnPrev").addEventListener("click", ()=>{ if(page>1){ page--; renderTable(new Map()); } });
   $("btnNext").addEventListener("click", ()=>{
     const maxPage = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-    if(page < maxPage){ page++; renderTable(); }
+    if(page < maxPage){ page++; renderTable(new Map()); }
   });
   $("btnSync").addEventListener("click", async()=>{
     toast("Senkron","Sunucudan çekiliyor…");
-    await detectColumns();
-    await loadPersonel(true);
     await applyFilters(true);
   });
   $("btnExport").addEventListener("click", exportXLSX);
@@ -870,7 +912,7 @@ function wire(){
     supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     setStatus("Bağlantı hazır", true);
 
-    await detectColumns();
+    await detectColumnsV2();
     await loadPersonel();
     await applyFilters();
   }catch(e){
